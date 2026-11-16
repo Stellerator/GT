@@ -1,5 +1,5 @@
 /* GT-Portal Service Worker – Version und Dateiliste setzt bauen.js ein */
-const VERSION = '20261116-5a68c3e';
+const VERSION = '20261116-0f01d42';
 const FILES = ["./","assets/apple-touch-icon.png","assets/icon-192.png","assets/icon-512.png","assets/standard-folien.svg","assets/standard-spiel.svg","assets/standard-zusammenfassung.svg","index.html","inhalte/kupplung/icon.svg","inhalte/kupplung/index.html","inhalte/redline/icon.svg","manifest.webmanifest"];
 const CACHE = 'gt-' + VERSION;
 

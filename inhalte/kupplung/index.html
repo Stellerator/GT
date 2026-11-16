@@ -77,7 +77,7 @@ input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;ba
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;margin-top:-11px;border-radius:50%;background:#fff;border:3px solid var(--cy);box-shadow:0 0 14px rgba(25,230,255,.8)}
 input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:linear-gradient(90deg,rgba(25,230,255,.55),rgba(255,47,208,.55))}
 input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--cy)}
-body.running #ctrl{opacity:.45;pointer-events:none}
+body.running #ctrl .cMain{opacity:.45;pointer-events:none}
 
 /* Fenster */
 #modal{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(5,3,20,.72);backdrop-filter:blur(3px)}
@@ -121,6 +121,18 @@ body.running #ctrl{opacity:.45;pointer-events:none}
 .given{margin-top:4px;font-size:17px;font-weight:800;color:var(--cy)}
 .given b{font-size:21px;text-shadow:0 0 12px rgba(25,230,255,.55)}
 
+#tools{position:absolute;top:8px;right:8px;display:flex;gap:6px;z-index:3}
+.tb{height:32px;padding:0 12px;border-radius:16px;border:1px solid var(--line);background:rgba(20,14,56,.85);font-weight:800;font-size:12px;letter-spacing:.03em;color:var(--mut);cursor:pointer}
+.tb.on{border-color:var(--cy);color:var(--cy);box-shadow:0 0 12px rgba(25,230,255,.3)}
+.tutQ{font-size:17px;line-height:1.4;margin:4px 0 10px}
+.scene{margin:8px 0;border:1px solid var(--line);border-radius:14px;padding:6px 8px;background:rgba(8,5,30,.6)}
+.scene svg{display:block;width:100%;height:auto}
+.tutSteps{margin:10px 0}
+.tutStep{display:flex;gap:10px;align-items:flex-start;margin:9px 0;font-size:15.5px;line-height:1.45}
+.tutStep .num{flex:none;width:26px;height:26px;border-radius:50%;background:var(--am);color:#07051a;font-weight:900;display:grid;place-items:center;font-size:14px;margin-top:1px}
+.tutStep b{color:var(--gr)}
+.merke{margin:12px 0 4px;padding:8px 12px;border-left:3px solid var(--gr);background:rgba(55,255,139,.08);border-radius:0 10px 10px 0;font-size:15px;line-height:1.4}
+
 </style>
 </head>
 <body data-screen="menu">
@@ -143,7 +155,7 @@ body.running #ctrl{opacity:.45;pointer-events:none}
 
   <section class="scr" id="scrLevel">
     <div id="goal" class="card"><div id="goalTxt"></div><div id="tries"></div><button class="ico sm" id="btnHelp" aria-label="Info zum Aufgabentyp" title="Info">i</button></div>
-    <div id="stage"><canvas id="cv"></canvas></div>
+    <div id="stage"><canvas id="cv"></canvas><div id="tools"><button class="tb" id="tbSlow"></button><button class="tb" id="tbFast"></button></div></div>
     <div id="ctrl" class="card">
       <div class="cMain">
         <div class="cLab" id="cLab"></div>
@@ -172,52 +184,69 @@ const KCOL = ['#19e6ff', '#ff2fd0', '#ffb52e', '#37ff8b', '#a98bff'];
 
 const LEVELS = [
   /* ---------------- Welt 1: klebt ---------------- */
-  { id: 1, world: 1, title: 'Anhänger', typ: 'tor', stoss: 'klebt',
+  { id: 1, world: 2, title: 'Anhänger', typ: 'tor', stoss: 'klebt',
     text: 'Du rammst den Laster. Klack – die beiden kleben und rollen als ein Klumpen weiter. Der Klumpen soll durchs Tor, genau mit dem Soll-Tempo. Stell dein Tempo ein.',
     veh: [{ id: 'du', name: 'DU', m: 2, v: 0, x: 0, face: 1 }, { id: 'b', name: 'Laster', m: 3, v: 0, x: 45, face: -1 }],
     input: { kind: 'v', veh: 'du', min: 0, max: 20, step: 1, start: 8, unit: 'm/s', label: 'Dein Tempo v₀' },
     goal: { type: 'gate', veh: 'any', vT: 6, tol: 0.2, dx: 25 }, sol: 15, hint: true },
-  { id: 2, world: 1, title: 'Aufholjagd', typ: 'tor', stoss: 'klebt',
+  { id: 2, world: 2, title: 'Aufholjagd', typ: 'tor', stoss: 'klebt',
     text: 'Der Laster rollt schon. Hol ihn ein, kleb dich dran und fahr als Klumpen durchs Tor.',
     veh: [{ id: 'du', name: 'DU', m: 3, v: 0, x: 0, face: 1 }, { id: 'b', name: 'Laster', m: 2, v: 5, x: 24, face: 1 }],
     input: { kind: 'v', veh: 'du', min: 0, max: 20, step: 1, start: 8, unit: 'm/s', label: 'Dein Tempo v₀' },
     goal: { type: 'gate', veh: 'any', vT: 8, tol: 0.2, dx: 25 }, sol: 10, hint: true },
-  { id: 3, world: 1, title: 'Ladung', typ: 'masse', stoss: 'klebt',
+  { id: 3, world: 2, title: 'Ladung', typ: 'masse', stoss: 'klebt',
     text: 'Dein Tempo ist fest. Dafür darfst du Ladung zuladen. Wie schwer muss dein Wagen sein? Ab jetzt gibt es keine Vorschau mehr.',
     veh: [{ id: 'du', name: 'DU', m: 3, v: 12, x: 0, face: 1 }, { id: 'b', name: 'Laster', m: 4, v: 0, x: 36, face: -1 }],
     input: { kind: 'm', veh: 'du', min: 1, max: 6, step: 1, start: 4, unit: 't', label: 'Deine Masse (mit Ladung)' },
     goal: { type: 'gate', veh: 'any', vT: 4, tol: 0.2, dx: 25 }, sol: 2 },
-  { id: 4, world: 1, title: 'Gegenverkehr', typ: 'stand', stoss: 'klebt',
+  { id: 4, world: 2, title: 'Gegenverkehr', typ: 'stand', stoss: 'klebt',
     text: 'Frontal! Nach dem Klack soll der Klumpen stehen bleiben – mitten im Parkfeld. Achte auf die Richtungen.',
     veh: [{ id: 'du', name: 'DU', m: 2, v: 0, x: 0, face: 1 }, { id: 'b', name: 'Laster', m: 4, v: -10, x: 100, face: -1 }],
     input: { kind: 'v', veh: 'du', min: 0, max: 30, step: 1, start: 12, unit: 'm/s', label: 'Dein Tempo v₀' },
     goal: { type: 'stop', veh: 'du', tol: 0.15, zh: 14 }, sol: 20 },
-  { id: 5, world: 1, title: 'Kette', typ: 'kette', stoss: 'klebt',
+  { id: 5, world: 2, title: 'Kette', typ: 'kette', stoss: 'klebt',
     text: 'Zwei Stöße hintereinander. Am Ende fährt ein einziger Klumpen mit Soll-Tempo durchs Tor.',
     veh: [{ id: 'du', name: 'DU', m: 2, v: 0, x: 0, face: 1 }, { id: 'b', name: 'Wagen', m: 2, v: 0, x: 40, face: -1 }, { id: 'c', name: 'Laster', m: 4, v: -2, x: 110, face: -1 }],
     input: { kind: 'v', veh: 'du', min: 0, max: 30, step: 1, start: 12, unit: 'm/s', label: 'Dein Tempo v₀' },
     goal: { type: 'gate', veh: 'any', vT: 4, tol: 0.2, dx: 32 }, sol: 20 },
   /* ---------------- Welt 2: stößt ab (Start aus der Ruhe, Σp = 0) ---------------- */
-  { id: 6, world: 2, title: 'Rückstoß', typ: 'rueck', stoss: 'stößt ab',
+  { id: 6, world: 1, title: 'Rückstoß', typ: 'rueck', stoss: 'stößt ab',
     text: 'A und B kleben noch und stehen still. Gleich zündet der Sprengbolzen – dann stoßen sich die beiden ab. Der schwere Wagen B soll mit dem Soll-Tempo durchs Tor. Du legst fest, wie schnell A nach links wegfährt.',
     veh: [{ id: 'a', name: 'A', m: 1, v: 0, x: 0, face: 1 }, { id: 'b', name: 'B', m: 3, v: 0, x: 8, face: 1 }],
     couple: [['a', 'b']], split: { t: 1.5, a: 'a', b: 'b' },
     input: { kind: 'va', min: -20, max: 0, step: 1, start: -4, unit: 'm/s', label: 'Tempo von A nach dem Start' },
     goal: { type: 'gate', veh: 'b', vT: 3, tol: 0.2, dx: 16 }, sol: -9 },
-  { id: 7, world: 2, title: 'Ladung für B', typ: 'rueckm', stoss: 'stößt ab',
+  { id: 7, world: 1, title: 'Ladung für B', typ: 'rueckm', stoss: 'stößt ab',
     text: 'Wieder startet alles aus der Ruhe. Diesmal ist bekannt, wie A nach dem Start fährt. Du wählst die Masse von B (Ladung), damit B mit dem Soll-Tempo durchs Tor kommt.',
     veh: [{ id: 'a', name: 'A', m: 2, v: 0, x: 0, face: 1 }, { id: 'b', name: 'B', m: 3, v: 0, x: 8, face: 1 }],
     couple: [['a', 'b']], split: { t: 1.5, a: 'a', b: 'b', va: -8 },
     input: { kind: 'm', veh: 'b', min: 1, max: 8, step: 1, start: 3, unit: 't', label: 'Masse von B (mit Ladung)' },
     goal: { type: 'gate', veh: 'b', vT: 4, tol: 0.2, dx: 18 }, sol: 4 },
-  { id: 8, world: 2, title: 'Raketenstufe', typ: 'rueck', stoss: 'stößt ab',
+  { id: 8, world: 1, title: 'Raketenstufe', typ: 'rueck', stoss: 'stößt ab',
     text: 'B ist die kleine Rakete, A die schwere Stufe. Die Rakete soll mit dem Soll-Tempo durchs Tor. Wie schnell muss die Stufe A dafür nach links wegfahren?',
     veh: [{ id: 'a', name: 'A', m: 3, v: 0, x: 0, face: 1 }, { id: 'b', name: 'B', m: 1, v: 0, x: 8, face: 1 }],
     couple: [['a', 'b']], split: { t: 1.5, a: 'a', b: 'b' },
     input: { kind: 'va', min: -10, max: 0, step: 1, start: -2, unit: 'm/s', label: 'Tempo von A nach dem Start' },
     goal: { type: 'gate', veh: 'b', vT: 12, tol: 0.2, dx: 30 }, sol: -4 },
+  /* ---- Abstoßen aus der Fahrt: der Klumpen rollt schon, Σp = (Σm) · V ---- */
+  { id: 9, world: 1, title: 'Fahrender Klumpen', typ: 'fahrt', stoss: 'stößt ab',
+    text: 'Der Klumpen rollt schon mit 4 m/s. Gleich zündet der Sprengbolzen. B soll mit dem Soll-Tempo durchs Tor. Wie schnell muss A dafür fahren? (Es darf auch rückwärts sein.)',
+    veh: [{ id: 'a', name: 'A', m: 2, v: 4, x: 0, face: 1 }, { id: 'b', name: 'B', m: 2, v: 4, x: 8, face: 1 }],
+    couple: [['a', 'b']], split: { t: 1.5, a: 'a', b: 'b' },
+    input: { kind: 'va', min: -10, max: 4, step: 1, start: 0, unit: 'm/s', label: 'Tempo von A nach dem Start' },
+    goal: { type: 'gate', veh: 'b', vT: 10, tol: 0.2, dx: 24 }, sol: -2 },
+  { id: 10, world: 1, title: 'Zurückgelassen', typ: 'fahrtm', stoss: 'stößt ab',
+    text: 'Der Klumpen rollt mit 2 m/s. Nach dem Sprengen bleibt Wagen A stehen. B soll mit dem Soll-Tempo weiterfahren. Wähle die Masse von B (Ladung).',
+    veh: [{ id: 'a', name: 'A', m: 3, v: 2, x: 0, face: 1 }, { id: 'b', name: 'B', m: 3, v: 2, x: 8, face: 1 }],
+    couple: [['a', 'b']], split: { t: 1.5, a: 'a', b: 'b', va: 0 },
+    input: { kind: 'm', veh: 'b', min: 1, max: 6, step: 1, start: 3, unit: 't', label: 'Masse von B (mit Ladung)' },
+    goal: { type: 'gate', veh: 'b', vT: 5, tol: 0.2, dx: 24 }, sol: 2 },
 ];
 LEVELS.forEach((L) => L.veh.forEach((o, i) => { o.col = KCOL[i % KCOL.length]; }));
+// Reihenfolge im Spiel: Welt 1 = Abstoßen, Welt 2 = Kleben. Die ids bleiben stabil (Speicherstand), angezeigt wird die Nummer `no`.
+const ORDER = [6, 7, 8, 9, 10, 1, 2, 3, 4, 5];
+LEVELS.sort((a, b) => ORDER.indexOf(a.id) - ORDER.indexOf(b.id));
+LEVELS.forEach((L, i) => { L.no = i + 1; });
 
 const idxOf = (L, id) => L.veh.findIndex((o) => o.id === id);
 const fmt = (v, d = 1) => (Math.abs(v) < 0.5 * Math.pow(10, -d) ? 0 : v).toFixed(d).replace('.', ',').replace('-', '−');
@@ -400,7 +429,7 @@ const $ = (id) => document.getElementById(id);
 window.__errs = [];
 window.addEventListener('error', (e) => window.__errs.push(String(e.message)));
 
-let P = { stars: {}, seen: {} };
+let P = { stars: {}, seen: {}, slow: true, fast2: false };
 try { P = Object.assign(P, JSON.parse(localStorage.getItem('kupplung-v1') || '{}')); } catch (e) { /* ohne Speicher weiter */ }
 const saveP = () => { try { localStorage.setItem('kupplung-v1', JSON.stringify(P)); } catch (e) { /* egal */ } };
 
@@ -413,18 +442,18 @@ function setScreen(n) {
   document.body.dataset.screen = n;
   $('scrMenu').classList.toggle('active', n === 'menu');
   $('scrLevel').classList.toggle('active', n === 'level');
-  $('topTitle').textContent = n === 'menu' ? 'REDLINE · KUPPLUNG' : 'Welt ' + S.L.world + ' · ' + S.L.id + ' ' + S.L.title;
+  $('topTitle').textContent = n === 'menu' ? 'REDLINE · KUPPLUNG' : 'Welt ' + S.L.world + ' · ' + S.L.no + ' ' + S.L.title;
 }
 function totalStars() { return LEVELS.reduce((a, L) => a + (P.stars[L.id] || 0), 0); }
 function updStars() { $('stStars').textContent = '★ ' + totalStars() + '/' + LEVELS.length * 3; }
 
 function buildMenu() {
   const worlds = [
-    { n: 1, title: 'Welt 1 · Kleben', cls: 'k', tag: 'klebt', sub: 'Vollständig inelastischer Stoß: Die Wagen kleben zusammen und rollen als ein Klumpen weiter.' },
-    { n: 2, title: 'Welt 2 · Abstoßen', cls: 's', tag: 'stößt ab', sub: 'Zwei Wagen starten zusammen aus der Ruhe (Gesamtimpuls 0) und werden durch einen Sprengbolzen getrennt.' },
+    { n: 1, title: 'Welt 1 · Abstoßen', cls: 's', tag: 'stößt ab', sub: 'Ein Sprengbolzen trennt zwei gekoppelte Wagen. Erst aus der Ruhe (Gesamtimpuls 0), dann aus der Fahrt.' },
+    { n: 2, title: 'Welt 2 · Kleben', cls: 'k', tag: 'klebt', sub: 'Vollständig inelastischer Stoß: Die Wagen kleben zusammen und rollen als ein Klumpen weiter.' },
   ];
   $('worlds').innerHTML = worlds.map((w) => '<div class="card world"><div class="wHead"><b>' + w.title + '</b><span class="schild ' + w.cls + '">' + w.tag + '</span></div><div class="wSub">' + w.sub + '</div><div class="lvGrid">' +
-    LEVELS.map((L, i) => L.world === w.n ? '<button class="lv" data-lv="' + i + '"><div class="no">LEVEL ' + L.id + '</div><div class="nm">' + L.title + '</div><div class="st">' +
+    LEVELS.map((L, i) => L.world === w.n ? '<button class="lv" data-lv="' + i + '"><div class="no">LEVEL ' + L.no + '</div><div class="nm">' + L.title + '</div><div class="st">' +
       [1, 2, 3].map((k) => '<i class="' + ((P.stars[L.id] || 0) >= k ? 'on' : '') + '">★</i>').join('') + '</div></button>' : '').join('') + '</div></div>').join('');
   updStars();
 }
@@ -436,8 +465,8 @@ function goal() {
   if (g.type === 'gate') t = who + ' durchs Tor – Tempo <b style="color:var(--am)">' + fmt(g.vT) + ' m/s</b> (± ' + fmt(g.tol) + ')';
   else t = (coup ? 'Der Klumpen' : 'Wagen A') + ' bleibt im Parkfeld <b style="color:var(--gr)">stehen</b> (v = 0)';
   let sm = 'Rechts ist positiv, links ist negativ.';
-  if (L.split) sm = 'Start: beide Wagen stehen zusammen still (Gesamtimpuls = 0). ' + sm;
-  if (L.split && L.split.va != null) t += '<div class="given">Gegeben: A fährt nach dem Start mit <b>' + fmt(L.split.va) + ' m/s</b></div>';
+  if (L.split) sm = (L.veh[0].v === 0 ? 'Start: beide Wagen stehen zusammen still (Gesamtimpuls = 0). ' : 'Start: beide Wagen rollen verklebt mit ' + fmt(L.veh[0].v) + ' m/s (Gesamtimpuls = Gesamtmasse · ' + fmt(L.veh[0].v) + '). ') + sm;
+  if (L.split && L.split.va != null) t += '<div class="given">Gegeben: ' + (L.split.va === 0 ? 'A bleibt nach dem Start <b>stehen (0 m/s)</b>' : 'A fährt nach dem Start mit <b>' + fmt(L.split.va) + ' m/s</b>') + '</div>';
   $('goalTxt').innerHTML = t + '<small>' + sm + '</small>';
   const nx = starsFor(S.attempts + 1);
   $('tries').innerHTML = 'Versuch ' + (S.attempts + 1) + '<br><b>' + '★'.repeat(nx) + '</b>';
@@ -460,7 +489,7 @@ function setVal(v) {
 
 function openLevel(i) {
   S.li = i; S.L = LEVELS[i]; S.val = S.L.input.start; S.attempts = 0; S.running = false; S.fx = []; S.parts = []; S.hit = null;
-  document.body.classList.remove('running');
+  document.body.classList.remove('running'); setGoBtn(false); updTools();
   closeModal();
   setScreen('level');
   goal(); setCtrl();
@@ -473,7 +502,7 @@ function showModal(html) { $('modalCard').innerHTML = html; $('modal').classList
 function closeModal() { $('modal').classList.remove('show'); }
 function showBrief() {
   const L = S.L;
-  showModal('<h2>' + L.title + '</h2><p>' + L.text + '</p>' + (L.id === 1 ? '<p style="color:var(--mut)">Die Zahlen an den Wagen zeigen Masse und Tempo. Rechts ist positiv. Das kleine i oben rechts erklärt dir den Aufgabentyp mit einer Beispielrechnung.</p>' : '') + '<div class="mBtns"><button class="btn primary" data-act="brief">Los</button></div>');
+  showModal('<h2>' + L.title + '</h2><p>' + L.text + '</p>' + (L.no === 1 ? '<p style="color:var(--mut)">Die Zahlen an den Wagen zeigen Masse und Tempo. Rechts ist positiv. Das kleine i oben rechts erklärt dir den Aufgabentyp mit einer Beispielrechnung.</p>' : '') + '<div class="mBtns"><button class="btn primary" data-act="brief">Los</button></div>');
 }
 
 function segsOf(groups, sim) {
@@ -484,26 +513,39 @@ function segsOf(groups, sim) {
   });
   return out;
 }
-function barsSVG(rows) {
-  const sums = rows.map((r) => r.segs.reduce((a, s) => a + s.p, 0));
-  const mx = Math.max(1, ...rows.map((r) => Math.max(r.segs.filter((s) => s.p > 0).reduce((a, s) => a + s.p, 0), -r.segs.filter((s) => s.p < 0).reduce((a, s) => a + s.p, 0))));
-  const k = 185 / mx, x0 = 210;
-  let svg = '<svg viewBox="0 0 420 124" xmlns="http://www.w3.org/2000/svg" font-family="inherit">';
-  svg += '<line x1="' + x0 + '" y1="6" x2="' + x0 + '" y2="116" stroke="#8c93bd" stroke-width="1.5" stroke-dasharray="3 3"/><text x="' + (x0 + 4) + '" y="116" fill="#8c93bd" font-size="10">0</text>';
+function barsSVG(rows, opt) {
+  opt = opt || {};
+  const ext = rows.map((r) => ({ pos: r.segs.filter((q) => q.p > 0).reduce((x, q) => x + q.p, 0), neg: -r.segs.filter((q) => q.p < 0).reduce((x, q) => x + q.p, 0) }));
+  const sums = rows.map((r) => r.segs.reduce((x, q) => x + q.p, 0));
+  const mx = Math.max(1, ...ext.map((e) => Math.max(e.pos, e.neg)));
+  const k = 185 / mx, x0 = 210, noteH = opt.note ? 22 : 0, H = rows.length * 54 + 14 + noteH, bottom = rows.length * 54 - 6;
+  let svg = '<svg viewBox="0 0 420 ' + H + '" xmlns="http://www.w3.org/2000/svg" font-family="inherit">';
+  svg += '<line x1="' + x0 + '" y1="6" x2="' + x0 + '" y2="' + (bottom + 8) + '" stroke="#8c93bd" stroke-width="1.5" stroke-dasharray="3 3"/><text x="' + (x0 + 4) + '" y="' + (bottom + 8) + '" fill="#8c93bd" font-size="10">0</text>';
   rows.forEach((r, ri) => {
     const y = 22 + ri * 54;
     svg += '<text x="6" y="' + (y - 6) + '" fill="#8c93bd" font-size="10" font-weight="700" letter-spacing="1">' + r.name + '</text>';
     let pos = 0, neg = 0;
-    r.segs.forEach((s) => {
-      const w = Math.abs(s.p) * k, xs = s.p > 0 ? x0 + pos : x0 - neg - w;
-      if (s.p > 0) pos += w; else neg += w;
+    r.segs.forEach((q) => {
+      const w = Math.abs(q.p) * k, xs = q.p > 0 ? x0 + pos : x0 - neg - w;
+      if (q.p > 0) pos += w; else neg += w;
+      if (q.unknown) {
+        const col = q.parts[0].col;
+        svg += '<rect x="' + xs.toFixed(1) + '" y="' + y + '" width="' + w.toFixed(1) + '" height="30" fill="' + col + '" fill-opacity=".14" stroke="' + col + '" stroke-width="2.5" stroke-dasharray="6 4"/>';
+        if (w > 34) svg += '<text x="' + (xs + w / 2).toFixed(1) + '" y="' + (y + 20) + '" text-anchor="middle" fill="' + col + '" font-size="14" font-weight="900">' + q.label + '</text>';
+        return;
+      }
       let off = 0;
-      s.parts.forEach((pt) => { const ww = w * pt.share; svg += '<rect x="' + (xs + off).toFixed(1) + '" y="' + y + '" width="' + ww.toFixed(1) + '" height="30" fill="' + pt.col + '" fill-opacity=".85"/>'; off += ww; });
+      q.parts.forEach((pt) => { const ww = w * pt.share; svg += '<rect x="' + (xs + off).toFixed(1) + '" y="' + y + '" width="' + ww.toFixed(1) + '" height="30" fill="' + pt.col + '" fill-opacity=".85"/>'; off += ww; });
       svg += '<rect x="' + xs.toFixed(1) + '" y="' + y + '" width="' + w.toFixed(1) + '" height="30" fill="none" stroke="#07051a" stroke-width="2"/>';
-      if (w > 34) svg += '<text x="' + (xs + w / 2).toFixed(1) + '" y="' + (y + 20) + '" text-anchor="middle" fill="#07051a" font-size="13" font-weight="900">' + s.label + '</text>';
+      if (w > 34) svg += '<text x="' + (xs + w / 2).toFixed(1) + '" y="' + (y + 20) + '" text-anchor="middle" fill="#07051a" font-size="13" font-weight="900">' + q.label + '</text>';
     });
     if (!r.segs.length) svg += '<text x="' + (x0 + 8) + '" y="' + (y + 20) + '" fill="#37ff8b" font-size="13" font-weight="800">Σp = 0</text>';
   });
+  if (opt.guide) {
+    const gp = Math.max(...ext.map((e) => e.pos)), gn = Math.max(...ext.map((e) => e.neg));
+    [gp > 0 ? x0 + gp * k : null, gn > 0 ? x0 - gn * k : null].forEach((gx) => { if (gx != null) svg += '<line x1="' + gx.toFixed(1) + '" y1="4" x2="' + gx.toFixed(1) + '" y2="' + (bottom + 4) + '" stroke="#ffb52e" stroke-width="2" stroke-dasharray="4 4"/>'; });
+  }
+  if (opt.note) svg += '<text x="210" y="' + (H - 5) + '" text-anchor="middle" fill="#ffb52e" font-size="13" font-weight="800">' + opt.note + '</text>';
   svg += '</svg>';
   return { svg, sums };
 }
@@ -528,12 +570,13 @@ function showResult() {
 /* ---------------- Ablauf ---------------- */
 function go() {
   if (S.running) return;
-  S.attempts++;
+  S.runId = (S.runId | 0) + 1;
   S.sim = simulate(S.L, S.val);
   S.res = evaluate(S.L, S.sim);
   S.tEnd = runEnd(S.L, S.sim, S.res);
   S.t = 0; S.fired = 0; S.hit = null; S.fx = []; S.parts = []; S.shake = 0;
   S.running = true;
+  setGoBtn(true);
   document.body.classList.add('running');
   if (S.fast) { S.t = S.tEnd; S.fired = S.sim.events.length; S.hit = S.res.tc != null ? { v: S.res.v, ok: S.res.ok } : null; finish(); return; }
   S.last = performance.now();
@@ -542,8 +585,8 @@ function go() {
 function frame(now) {
   if (!S.running) return;
   const dtR = Math.min(0.05, (now - S.last) / 1000); S.last = now;
-  const nearEv = S.sim.events.some((e) => Math.abs(e.t - S.t) < 0.25);
-  S.t += dtR * (nearEv ? 0.3 : S.t > S.sim.tLast + 0.6 ? 1.4 : 1);
+  const nearEv = P.slow !== false && S.sim.events.some((e) => Math.abs(e.t - S.t) < 0.25);
+  S.t += dtR * (nearEv ? 0.3 : S.t > S.sim.tLast + 0.6 ? 1.4 : 1) * (P.fast2 ? 2 : 1);
   while (S.fired < S.sim.events.length && S.sim.events[S.fired].t <= S.t) burst(S.sim.events[S.fired++]);
   if (S.res.tc != null && !S.hit && S.t >= S.res.tc) { S.hit = { v: S.res.v, ok: S.res.ok }; S.shake = Math.max(S.shake, 0.4); }
   draw(dtR);
@@ -551,19 +594,38 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 function finish() {
-  S.running = false;
+  S.running = false; S.attempts++; setGoBtn(false);
   document.body.classList.remove('running');
   draw(0);
   if (S.res.ok) { const st = starsFor(S.attempts); if (st > (P.stars[S.L.id] || 0)) { P.stars[S.L.id] = st; saveP(); } }
   updStars(); goal();
-  if (S.fast) showResult(); else setTimeout(() => { if (!S.running) showResult(); }, 650);
+  const rid = S.runId;
+  if (S.fast) showResult(); else setTimeout(() => { if (!S.running && S.runId === rid) showResult(); }, 650);
 }
+function setGoBtn(run) { $('btnGo').innerHTML = run ? '↺ Neustart' : '▶ GO'; $('btnGo').classList.toggle('primary', !run); }
+function restart() {
+  if (!S.running) return;
+  S.running = false; S.runId = (S.runId | 0) + 1; setGoBtn(false);
+  document.body.classList.remove('running'); closeModal();
+  S.fx = []; S.parts = []; S.shake = 0; setVal(S.val);
+}
+function updTools() {
+  const sl = P.slow !== false;
+  $('tbSlow').classList.toggle('on', sl); $('tbSlow').textContent = sl ? 'Zeitlupe an' : 'Zeitlupe aus';
+  $('tbFast').classList.toggle('on', !!P.fast2); $('tbFast').textContent = P.fast2 ? 'Tempo ×2 an' : 'Tempo ×2';
+}
+const WORDS = { couple: ['KLACK!', 'CRASH!', 'KNALL!', 'BUMM!', 'RUMMS!', 'WUMMS!', 'KRACH!', 'BAMM!', 'PATSCH!', 'KRAWUMM!'], split: ['PENG!', 'PUFF!', 'ZACK!', 'PAFF!', 'ZISCH!', 'BOING!'] };
+const PAL = [['#fff27a', '#ff9d1c'], ['#ffe36e', '#ff3b5c'], ['#8cf6ff', '#1a8cff'], ['#ff9bf0', '#ff2fd0'], ['#b5ffd0', '#25c97d']];
 function burst(ev) {
   const v = view(), x = v.X(ev.x), y = v.gy - 26;
-  S.fx.push({ born: performance.now(), x, y, txt: ev.kind === 'couple' ? 'KLACK!' : 'PENG!' });
+  const list = WORDS[ev.kind] || WORDS.couple; let w;
+  do { w = list[Math.floor(Math.random() * list.length)]; } while (w === S.lastWord && list.length > 1);
+  S.lastWord = w;
+  const pal = PAL[Math.floor(Math.random() * PAL.length)];
+  S.fx.push({ born: performance.now(), x, y, txt: w, rot: (Math.random() - 0.5) * 0.3, c1: pal[0], c2: pal[1], fs: w.length > 7 ? 19 : w.length > 5 ? 23 : 29 });
   S.shake = 1;
   const cols = ['#ffffff', '#19e6ff', '#ff2fd0', '#ffb52e'];
-  for (let i = 0; i < 34; i++) { const a = Math.random() * Math.PI * 2, s = 50 + Math.random() * 220; S.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 40, life: 0.5 + Math.random() * 0.5, age: 0, col: cols[i % 4] }); }
+  for (let i = 0; i < 34; i++) { const a = Math.random() * Math.PI * 2, sp = 50 + Math.random() * 220; S.parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 40, life: 0.5 + Math.random() * 0.5, age: 0, col: cols[i % 4] }); }
 }
 
 /* ---------------- Zeichnen ---------------- */
@@ -667,7 +729,7 @@ function draw(dtR) {
     }
   });
   const hmax = (m) => w * Math.min(0.62, 0.3 + 0.05 * m) * (m >= 3 ? 1.0 : 1.0) + w * 0.17;
-  st.forEach((s, i) => { const o = L.veh[i]; const vv = s.v; drawCar(c, v.X(s.x), gy, w, s.m, o.col, vv < -1e-6 ? -1 : vv > 1e-6 ? 1 : (o.face || 1), L.split ? o.name : ''); });
+  st.forEach((s, i) => { const o = L.veh[i]; const vv = s.v; drawCar(c, v.X(s.x), gy, w, s.m, o.col, (o.face || 1), L.split ? o.name : ''); });
   const fs = Math.max(11, Math.min(15, CW / 70));
   groups.forEach((gr) => {
     const cx = gr.mem.reduce((a, i) => a + v.X(st[i].x), 0) / gr.mem.length;
@@ -684,7 +746,7 @@ function draw(dtR) {
     const ga = groups.find((gr) => gr.mem.includes(idxOf(L, L.split.a)));
     if (ga) {
       const cx = ga.mem.reduce((a, i) => a + v.X(st[i].x), 0) / ga.mem.length, top = gy - Math.max(...ga.mem.map((i) => hmax(st[i].m))) - 14;
-      const txt = 'A fährt mit ' + fmt(L.split.va) + ' m/s ' + (L.split.va < 0 ? '◀' : '▶');
+      const txt = L.split.va === 0 ? 'A bleibt stehen (0 m/s)' : 'A fährt mit ' + fmt(L.split.va) + ' m/s ' + (L.split.va < 0 ? '◀' : '▶');
       c.font = '900 ' + (fs + 4) + 'px Bahnschrift,system-ui,sans-serif'; const tw = c.measureText(txt).width + 24, by = top - 98;
       c.fillStyle = 'rgba(10,8,40,.94)'; rr(c, cx - tw / 2, by, tw, 34, 10); c.fill(); c.strokeStyle = '#19e6ff'; c.lineWidth = 2; c.shadowColor = '#19e6ff'; c.shadowBlur = 12; c.stroke(); c.shadowBlur = 0;
       c.fillStyle = '#19e6ff'; c.textAlign = 'center'; c.fillText(txt, cx, by + 23);
@@ -699,8 +761,19 @@ function draw(dtR) {
     c.fillText(pv == null ? 'Vorschau: kein Stoß – die Wagen verpassen sich' : 'Vorschau: Der Klumpen würde mit ' + fmt(pv) + ' m/s fahren', CW / 2, 22);
   }
   // Effekte
-  S.fx = S.fx.filter((f) => now - f.born < 900);
-  S.fx.forEach((f) => { const a = (now - f.born) / 900; c.globalAlpha = 1 - a; c.fillStyle = '#fff'; c.shadowColor = '#ff2fd0'; c.shadowBlur = 18; c.font = '900 ' + (22 + 10 * a) + 'px Bahnschrift,system-ui,sans-serif'; c.textAlign = 'center'; c.fillText(f.txt, f.x, f.y - 50 - 30 * a); c.globalAlpha = 1; c.shadowBlur = 0; });
+  S.fx = S.fx.filter((f) => now - f.born < 1100);
+  S.fx.forEach((f) => {
+    const a = (now - f.born) / 1100, sc = a < 0.14 ? 0.3 + (a / 0.14) : 1.3 - 0.3 * Math.min(1, (a - 0.14) / 0.25), al = a > 0.72 ? (1 - a) / 0.28 : 1;
+    c.save(); c.translate(Math.max(76, Math.min(CW - 76, f.x)), Math.max(66, f.y - 80)); c.rotate(f.rot); c.scale(sc, sc); c.globalAlpha = Math.max(0, al);
+    const r = 66, n = 11; c.beginPath();
+    for (let i = 0; i < n * 2; i++) { const ang = i * Math.PI / n, rad = i % 2 ? r * 0.64 : r * (0.92 + 0.1 * ((i * 7) % 3) / 2); c.lineTo(Math.cos(ang) * rad, Math.sin(ang) * rad); }
+    c.closePath();
+    const bg = c.createRadialGradient(0, 0, 4, 0, 0, r); bg.addColorStop(0, f.c1); bg.addColorStop(1, f.c2);
+    c.fillStyle = bg; c.shadowColor = f.c2; c.shadowBlur = 22; c.fill(); c.shadowBlur = 0; c.lineWidth = 4; c.strokeStyle = '#ffffff'; c.lineJoin = 'round'; c.stroke();
+    c.font = 'italic 900 ' + f.fs + 'px Bahnschrift,system-ui,sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.lineWidth = 7; c.strokeStyle = '#07051a'; c.strokeText(f.txt, 0, 2); c.fillStyle = '#ffffff'; c.fillText(f.txt, 0, 2);
+    c.restore();
+  });
   c.globalCompositeOperation = 'lighter';
   S.parts.forEach((p) => { p.age += dtR || 0; p.x += p.vx * (dtR || 0); p.y += p.vy * (dtR || 0); p.vy += 260 * (dtR || 0); const a = Math.max(0, 1 - p.age / p.life); c.globalAlpha = a; c.fillStyle = p.col; c.beginPath(); c.arc(p.x, p.y, 2.6 * a + 0.6, 0, 7); c.fill(); });
   c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
@@ -711,50 +784,107 @@ function draw(dtR) {
 
 /* ---------------- Tutorial ---------------- */
 const C1 = '#19e6ff', C2 = '#ff2fd0', C3 = '#ffb52e';
-const seg = (p, label, parts) => ({ p, label, parts });
+const seg = (p, label, parts, unknown) => ({ p, label, parts: Array.isArray(parts) ? parts : [{ col: parts, share: 1 }], unknown: !!unknown });
+const car = (col, big) => ({ col, big: !!big });
+const item = (cars, l1, l2) => ({ cars, l1, l2 });
+
+function carSVG(x, y, big, col) {
+  const w = big ? 44 : 34, h = big ? 22 : 15, by = y - 6;
+  let o = '<g stroke="' + col + '" stroke-width="2" stroke-linejoin="round" fill="' + col + '" fill-opacity=".28">';
+  if (big) o += '<rect x="' + x + '" y="' + (by - h) + '" width="' + (w * 0.62).toFixed(1) + '" height="' + h + '" rx="3"/><path d="M' + (x + w * 0.62 + 1).toFixed(1) + ' ' + by + 'V' + (by - h * 0.75) + 'H' + (x + w * 0.86).toFixed(1) + 'L' + (x + w) + ' ' + (by - h * 0.3) + 'V' + by + 'Z"/>';
+  else o += '<rect x="' + x + '" y="' + (by - h * 0.6) + '" width="' + w + '" height="' + (h * 0.6) + '" rx="3"/><path d="M' + (x + w * 0.22).toFixed(1) + ' ' + (by - h * 0.6) + 'L' + (x + w * 0.34).toFixed(1) + ' ' + (by - h) + 'H' + (x + w * 0.62).toFixed(1) + 'L' + (x + w * 0.76).toFixed(1) + ' ' + (by - h * 0.6) + '"/>';
+  o += '</g>';
+  [0.24, 0.76].forEach((f) => { o += '<circle cx="' + (x + w * f).toFixed(1) + '" cy="' + (y - 3.5) + '" r="3.8" fill="#0b0a22" stroke="' + col + '" stroke-width="2"/>'; });
+  return o;
+}
+function sceneSVG(sc) {
+  const gy = 86, gap = 40, cw = (c) => (c.big ? 44 : 34);
+  const wOf = (it) => it.cars.reduce((a, c) => a + cw(c), 0) + (it.cars.length - 1) * 2;
+  const side = (items, cx) => {
+    const total = items.reduce((a, it) => a + wOf(it), 0) + gap * (items.length - 1);
+    let x = cx - total / 2, out = '';
+    items.forEach((it) => {
+      const w = wOf(it); let xx = x;
+      it.cars.forEach((c) => { out += carSVG(xx, gy, c.big, c.col); xx += cw(c) + 2; });
+      const q1 = it.l1.includes('?'), q2 = it.l2.includes('?');
+      out += '<text x="' + (x + w / 2).toFixed(1) + '" y="22" text-anchor="middle" fill="' + (q1 ? '#ffb52e' : '#c9cdf0') + '" font-size="12" font-weight="700">' + it.l1 + '</text>';
+      out += '<text x="' + (x + w / 2).toFixed(1) + '" y="42" text-anchor="middle" fill="' + (q2 ? '#ffb52e' : '#ffffff') + '" font-size="15" font-weight="900">' + it.l2 + '</text>';
+      x += w + gap;
+    });
+    return out;
+  };
+  let o = '<svg viewBox="0 0 420 100" xmlns="http://www.w3.org/2000/svg" font-family="inherit"><line x1="6" y1="' + gy + '" x2="414" y2="' + gy + '" stroke="#19e6ff" stroke-opacity=".5" stroke-width="2"/>';
+  if (!sc.after || !sc.after.length) return o + side(sc.before, 210) + '</svg>';
+  o += side(sc.before, 100) + side(sc.after, 322);
+  o += '<path d="M192 66h26m-8-7l8 7-8 7" stroke="#ffb52e" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>';
+  if (sc.mid) o += '<text x="205" y="52" text-anchor="middle" fill="#ffb52e" font-size="11" font-weight="800" letter-spacing="1">' + sc.mid + '</text>';
+  return o + '</svg>';
+}
+
 const TUT = [
   { k: 'idee', short: 'Grundidee', title: 'Die Grundidee',
-    idee: 'Jeder Wagen hat einen <b>Impuls p = m · v</b> (Masse mal Tempo). Rechts ist positiv, links negativ. Bei jedem Stoß und jeder Sprengung bleibt die <b>Summe aller Impulse</b> gleich: Σp vorher = Σp nachher. Mehr Physik brauchst du nicht.<br><br><b>Welt 1:</b> Die Wagen kleben beim Stoß und fahren als ein Klumpen weiter.<br><b>Welt 2:</b> Zwei Wagen starten zusammen aus der Ruhe und stoßen sich ab.<br><br>Nach jedem Versuch zeigt dir die Impuls-Waage, ob die Balken vorher und nachher gleich lang sind.',
-    ex: 'Du: 2 t mit 5 m/s → p = 2 · 5 = 10 t·m/s<br>Laster: 3 t mit −2 m/s → p = 3 · (−2) = −6 t·m/s' },
+    frage: 'Jeder Wagen hat <b>Impuls</b> – so etwas wie seine „Wucht“. Je schwerer und schneller, desto mehr.',
+    scene: { before: [item([car(C1)], 'Du · 2 t', '5 m/s ▶'), item([car(C2, true)], 'Laster · 3 t', '◀ −2 m/s')], after: [] },
+    bars: [{ name: 'IMPULS (Masse · Tempo)', segs: [seg(10, '2·5', C1), seg(-6, '3·−2', C2)] }], opt: { note: 'rechts ist positiv, links ist negativ' },
+    steps: ['<b>Impuls = Masse · Tempo.</b> Du: 2 · 5 = <b>10</b>.', 'Der Laster fährt nach links: 3 · (−2) = <b>−6</b>. Das Minus zeigt die Richtung – sein Balken geht nach links.', 'Bei jedem Stoß und jedem Abstoßen bleibt die <b>Summe</b> aller Impulse gleich (hier 10 − 6 = 4).'],
+    merke: 'Die Impuls-Waage nach jedem Versuch zeigt es: Was vorher da war, ist hinterher noch da – nur anders verteilt.' },
   { k: 'tor', short: 'Tempo einstellen', grp: 'KLEBEN', title: 'Kleben · Tempo einstellen',
-    gegeben: 'alle Massen, Tempo der anderen Wagen, Soll-Tempo des Klumpens', gesucht: 'dein Tempo v₀',
-    idee: 'Rechne vom Ziel rückwärts: Der Impuls des Klumpens nachher ist so groß wie der Gesamtimpuls vorher. Fährt der andere Wagen schon, zählt sein Impuls mit.',
-    ex: 'Du 1 t, Laster 4 t steht. Soll: 3 m/s.<br>nachher: (1 + 4) · 3 = 15<br>vorher: 1 · v₀ + 4 · 0 = 15 → <b>v₀ = 15 m/s</b>',
-    bars: [{ name: 'VORHER', segs: [seg(15, '1·15', [{ col: C1, share: 1 }])] }, { name: 'NACHHER', segs: [seg(15, '5·3', [{ col: C1, share: 0.2 }, { col: C2, share: 0.8 }])] }] },
+    frage: 'Du fährst gegen einen stehenden Laster, beide kleben. Wie schnell musst du sein, damit der Klumpen 3 m/s fährt?',
+    scene: { before: [item([car(C1)], 'Du · 1 t', '? m/s ▶'), item([car(C2, true)], 'Laster · 4 t', '0 m/s')], after: [item([car(C1), car(C2, true)], 'Klumpen · 5 t', '3 m/s ▶')], mid: 'klebt' },
+    bars: [{ name: 'VORHER', segs: [seg(15, '1·?', C1, true)] }, { name: 'NACHHER', segs: [seg(15, '5·3', [{ col: C1, share: 0.2 }, { col: C2, share: 0.8 }])] }], opt: { guide: true, note: 'beide Balken müssen gleich lang sein' },
+    steps: ['<b>Nachher:</b> Der Klumpen wiegt 1 + 4 = 5 t und fährt 3 m/s. Sein Impuls: 5 · 3 = <b>15</b>.', '<b>Vorher</b> muss genau so viel Impuls da sein. Der Laster steht (Impuls 0) – also kommt alles von dir.', '<b>Du:</b> 1 · ? = 15, also <b>? = 15 m/s</b>.'],
+    merke: 'Rechne vom Ziel rückwärts: erst den Impuls nachher, dann das fehlende Tempo vorher. Fährt der andere Wagen schon, zählt sein Impuls mit.' },
   { k: 'masse', short: 'Masse wählen', grp: 'KLEBEN', title: 'Kleben · Masse wählen',
-    gegeben: 'dein Tempo, die anderen Massen und Tempos, Soll-Tempo', gesucht: 'deine Masse m',
-    idee: 'Schreibe die Bilanz mit der unbekannten Masse hin und löse nach m auf.',
-    ex: 'Dein Tempo 10 m/s, Laster 3 t steht. Soll: 2,5 m/s.<br>m · 10 = (m + 3) · 2,5<br>10 m = 2,5 m + 7,5 → 7,5 m = 7,5 → <b>m = 1 t</b>',
-    bars: [{ name: 'VORHER', segs: [seg(10, '1·10', [{ col: C1, share: 1 }])] }, { name: 'NACHHER', segs: [seg(10, '4·2,5', [{ col: C1, share: 0.25 }, { col: C2, share: 0.75 }])] }] },
+    frage: 'Dein Tempo ist fest: 10 m/s. Der Laster (3 t) steht. Der Klumpen soll 2,5 m/s fahren. Wie schwer muss dein Wagen sein?',
+    scene: { before: [item([car(C1)], 'Du · ? t', '10 m/s ▶'), item([car(C2, true)], 'Laster · 3 t', '0 m/s')], after: [item([car(C1), car(C2, true)], 'Klumpen · (? + 3) t', '2,5 m/s ▶')], mid: 'klebt' },
+    bars: [{ name: 'VORHER (Probe mit 1 t)', segs: [seg(10, '1·10', C1)] }, { name: 'NACHHER', segs: [seg(10, '4·2,5', [{ col: C1, share: 0.25 }, { col: C2, share: 0.75 }])] }], opt: { guide: true, note: 'Probe: beide Balken gleich lang' },
+    steps: ['<b>Vorher:</b> Nur dein Wagen hat Impuls: Masse · 10.', '<b>Nachher:</b> Alle zusammen: (Masse + 3) · 2,5 = 2,5 · Masse + 7,5.', '<b>Gleich setzen:</b> 10 · Masse = 2,5 · Masse + 7,5. Also 7,5 · Masse = 7,5 und <b>Masse = 1 t</b>.', '<b>Probe:</b> 1 · 10 = 10 und (1 + 3) · 2,5 = 10 ✓'],
+    merke: 'Gleich lange Balken sind die Probe: Stimmt sie, hast du richtig gerechnet.' },
   { k: 'stand', short: 'Stillstand', grp: 'KLEBEN', title: 'Gegenverkehr · Stillstand',
-    gegeben: 'Massen, Tempo des Gegners (negativ!)', gesucht: 'dein Tempo v₀',
-    idee: 'Stehen bleiben heißt: Σp = 0. Dein Impuls nach rechts muss genauso groß sein wie der des Gegners nach links.',
-    ex: 'Du 3 t, Gegner 2 t mit −9 m/s.<br>3 · v₀ + 2 · (−9) = 0 → 3 v₀ = 18 → <b>v₀ = 6 m/s</b>',
-    bars: [{ name: 'VORHER', segs: [seg(18, '3·6', [{ col: C1, share: 1 }]), seg(-18, '2·−9', [{ col: C2, share: 1 }])] }, { name: 'NACHHER', segs: [] }] },
+    frage: 'Ein Laster (2 t) kommt dir mit 9 m/s entgegen. Du wiegst 3 t. Nach dem Klack soll alles stillstehen. Wie schnell musst du sein?',
+    scene: { before: [item([car(C1, true)], 'Du · 3 t', '? m/s ▶'), item([car(C2)], 'Laster · 2 t', '◀ −9 m/s')], after: [item([car(C1, true), car(C2)], 'Klumpen · 5 t', '0 m/s')], mid: 'klebt' },
+    bars: [{ name: 'VORHER', segs: [seg(-18, '2·−9', C2), seg(18, '3·?', C1, true)] }, { name: 'NACHHER', segs: [] }], opt: { note: 'links und rechts gleich lang = Summe 0' },
+    steps: ['Der Laster fährt nach links: 2 · (−9) = <b>−18</b>.', 'Nachher steht alles: Impuls <b>0</b>. Also muss auch die Summe vorher 0 sein.', 'Dein Impuls muss die −18 ausgleichen: 3 · ? = +18, also <b>? = 6 m/s</b>.'],
+    merke: 'Stillstand heißt: Der Balken nach links und der nach rechts sind gleich lang.' },
   { k: 'kette', short: 'Kette', grp: 'KLEBEN', title: 'Kette · mehrere Stöße',
-    gegeben: 'alle Massen und Tempos, Soll-Tempo am Ende', gesucht: 'dein Tempo v₀',
-    idee: 'Es zählt der Gesamtimpuls aller Wagen. In welcher Reihenfolge es klackt, ist egal – du rechnest nur einmal.',
-    ex: 'Du 1 t, zwei stehende Wagen mit 2 t und 2 t. Soll am Ende: 2 m/s.<br>1 · v₀ = (1 + 2 + 2) · 2 = 10 → <b>v₀ = 10 m/s</b>',
-    bars: [{ name: 'VORHER', segs: [seg(10, '1·10', [{ col: C1, share: 1 }])] }, { name: 'NACHHER', segs: [seg(10, '5·2', [{ col: C1, share: 0.2 }, { col: C2, share: 0.4 }, { col: C3, share: 0.4 }])] }] },
+    frage: 'Du (1 t) triffst nacheinander zwei stehende Wagen (je 2 t). Am Ende soll der ganze Klumpen 2 m/s fahren. Wie schnell musst du sein?',
+    scene: { before: [item([car(C1)], 'Du · 1 t', '? m/s ▶'), item([car(C2)], 'Wagen · 2 t', '0 m/s'), item([car(C3)], 'Wagen · 2 t', '0 m/s')], after: [item([car(C1), car(C2), car(C3)], 'Klumpen · 5 t', '2 m/s ▶')], mid: 'klebt' },
+    bars: [{ name: 'VORHER', segs: [seg(10, '1·?', C1, true)] }, { name: 'NACHHER', segs: [seg(10, '5·2', [{ col: C1, share: 0.2 }, { col: C2, share: 0.4 }, { col: C3, share: 0.4 }])] }], opt: { guide: true, note: 'beide Balken müssen gleich lang sein' },
+    steps: ['<b>Ganz am Ende:</b> 1 + 2 + 2 = 5 t mit 2 m/s. Impuls: 5 · 2 = <b>10</b>.', 'Die beiden Wagen stehen (Impuls 0). Also kommt <b>alles vorher von dir</b>: 1 · ? = 10.', '<b>? = 10 m/s.</b> Wie oft es klackt, ist egal.'],
+    merke: 'Nur Anfang und Ende zählen. Du rechnest die ganze Kette in einem Schritt.' },
   { k: 'rueck', short: 'Tempo des anderen', grp: 'ABSTOSSEN', title: 'Abstoßen · Tempo einstellen',
-    gegeben: 'beide Massen, Soll-Tempo des einen Wagens', gesucht: 'Tempo des anderen Wagens',
-    idee: 'Beide stehen zusammen still, der Gesamtimpuls ist 0. Nach dem Abstoßen sind die beiden Impulse <b>gleich groß, aber entgegengesetzt</b>: m_A · v_A + m_B · v_B = 0.',
-    ex: 'A 2 t, B 4 t. B soll mit 3 m/s nach rechts fahren.<br>p_B = 4 · 3 = 12 → p_A = −12<br>v_A = −12 : 2 = <b>−6 m/s</b>',
-    bars: [{ name: 'VORHER', segs: [] }, { name: 'NACHHER', segs: [seg(-12, '2·−6', [{ col: C1, share: 1 }]), seg(12, '4·3', [{ col: C2, share: 1 }])] }] },
+    frage: 'Zwei Wagen stehen zusammen (A 2 t, B 4 t). Ein Sprengbolzen stößt sie ab. B soll mit 3 m/s nach rechts fahren. Wie schnell fährt A nach links?',
+    scene: { before: [item([car(C1), car(C2, true)], 'A + B · 6 t', '0 m/s')], after: [item([car(C1)], 'A · 2 t', '◀ ? m/s'), item([car(C2, true)], 'B · 4 t', '3 m/s ▶')], mid: 'stößt ab' },
+    bars: [{ name: 'VORHER', segs: [] }, { name: 'NACHHER', segs: [seg(-12, '2·?', C1, true), seg(12, '4·3', C2)] }], opt: { note: 'links und rechts gleich lang = Summe 0' },
+    steps: ['<b>Vorher</b> stand alles: Gesamtimpuls <b>0</b>. Das gilt auch nachher.', 'B fährt nach rechts: 4 · 3 = <b>+12</b>.', 'A muss genau <b>−12</b> haben (gleich lang, andere Richtung): 2 · ? = −12, also <b>? = −6 m/s</b>.'],
+    merke: 'Beim Abstoßen aus der Ruhe sind beide Impulse gleich groß, aber entgegengesetzt. Der leichtere Wagen wird schneller.' },
+  { k: 'fahrt', short: 'Aus der Fahrt: Tempo', grp: 'ABSTOSSEN', title: 'Abstoßen aus der Fahrt · Tempo einstellen',
+    frage: 'Zwei verklebte Wagen (A 1 t, B 3 t) rollen mit 4 m/s. Ein Sprengbolzen stößt sie ab. B soll danach mit 6 m/s fahren. Wie schnell fährt A?',
+    scene: { before: [item([car(C1), car(C2, true)], 'A + B · 4 t', '4 m/s ▶')], after: [item([car(C1)], 'A · 1 t', '? m/s'), item([car(C2, true)], 'B · 3 t', '6 m/s ▶')], mid: 'stößt ab' },
+    bars: [{ name: 'VORHER', segs: [seg(16, '4·4', [{ col: C1, share: 0.25 }, { col: C2, share: 0.75 }])] }, { name: 'NACHHER', segs: [seg(-2, '', C1, true), seg(18, '3·6', C2)] }], opt: { note: 'rechts 18 minus links 2 = 16 (wie vorher)' },
+    steps: ['<b>Vorher:</b> Der Klumpen wiegt 1 + 3 = 4 t und fährt 4 m/s. Gesamtimpuls: 4 · 4 = <b>16</b>.', '<b>B nachher:</b> 3 · 6 = <b>18</b>.', 'Die Summe muss weiter 16 sein: A + 18 = 16, also hat A <b>−2</b>. 1 · ? = −2, also <b>? = −2 m/s</b>. A wird rückwärts geschoben.'],
+    merke: 'Der Gesamtimpuls bleibt erhalten – er ist nur nicht mehr 0. Er ist Gesamtmasse mal Tempo vor dem Abstoßen.' },
+  { k: 'fahrtm', short: 'Aus der Fahrt: Masse', grp: 'ABSTOSSEN', title: 'Abstoßen aus der Fahrt · Masse wählen',
+    frage: 'A (2 t) und B kleben und rollen mit 3 m/s. Nach dem Sprengen bleibt A stehen, B soll mit 6 m/s weiterfahren. Wie schwer muss B sein?',
+    scene: { before: [item([car(C1), car(C2, true)], 'A + B · (2 + ?) t', '3 m/s ▶')], after: [item([car(C1)], 'A · 2 t', '0 m/s'), item([car(C2, true)], 'B · ? t', '6 m/s ▶')], mid: 'stößt ab' },
+    bars: [{ name: 'VORHER (Probe mit 2 t)', segs: [seg(12, '4·3', [{ col: C1, share: 0.5 }, { col: C2, share: 0.5 }])] }, { name: 'NACHHER', segs: [seg(12, '2·6', C2)] }], opt: { guide: true, note: 'Probe: beide Balken gleich lang' },
+    steps: ['<b>Nachher:</b> A steht (Impuls 0). Nur B hat Impuls: Masse · 6.', '<b>Vorher:</b> Der Klumpen wiegt (2 + Masse) t: (2 + Masse) · 3 = 6 + 3 · Masse.', '<b>Gleich setzen:</b> 6 + 3 · Masse = 6 · Masse, also 3 · Masse = 6 und <b>Masse = 2 t</b>.', '<b>Probe:</b> (2 + 2) · 3 = 12 und 2 · 6 = 12 ✓'],
+    merke: 'Bleibt ein Wagen stehen, trägt der andere den ganzen Impuls weiter.' },
   { k: 'rueckm', short: 'Masse von B', grp: 'ABSTOSSEN', title: 'Abstoßen · Masse wählen',
-    gegeben: 'Masse und Tempo von A, Soll-Tempo von B', gesucht: 'Masse von B',
-    idee: 'Auch hier ist Σp = 0. Der Impuls von A bestimmt den Impuls von B – daraus folgt die Masse.',
-    ex: 'A 2 t fährt mit −5 m/s: p_A = −10 → p_B = +10.<br>B soll 2,5 m/s haben: m_B = 10 : 2,5 = <b>4 t</b>',
-    bars: [{ name: 'VORHER', segs: [] }, { name: 'NACHHER', segs: [seg(-10, '2·−5', [{ col: C1, share: 1 }]), seg(10, '4·2,5', [{ col: C2, share: 1 }])] }] },
+    frage: 'A (2 t) fährt nach dem Abstoßen mit −5 m/s nach links. B soll mit 2,5 m/s nach rechts fahren. Wie schwer muss B sein?',
+    scene: { before: [item([car(C1), car(C2, true)], 'A + B', '0 m/s')], after: [item([car(C1)], 'A · 2 t', '◀ −5 m/s'), item([car(C2, true)], 'B · ? t', '2,5 m/s ▶')], mid: 'stößt ab' },
+    bars: [{ name: 'VORHER', segs: [] }, { name: 'NACHHER', segs: [seg(-10, '2·−5', C1), seg(10, '?·2,5', C2, true)] }], opt: { note: 'links und rechts gleich lang = Summe 0' },
+    steps: ['A: 2 · (−5) = <b>−10</b>.', 'Der Gesamtimpuls bleibt 0 – also muss B <b>+10</b> haben.', '? · 2,5 = 10, also <b>? = 4 t</b>.'],
+    merke: 'Der Impuls von A bestimmt den Impuls von B. Daraus folgt die Masse.' },
 ];
 function openTut(i) {
   S.tut = Math.max(0, Math.min(TUT.length - 1, i));
   const t = TUT[S.tut];
-  let h = '<h2>' + t.title + '</h2>';
-  if (t.gegeben) h += '<div class="tutRow"><span class="tg">gegeben</span><span>' + t.gegeben + '</span></div><div class="tutRow"><span class="tg s">gesucht</span><span>' + t.gesucht + '</span></div>';
-  h += '<p>' + t.idee + '</p>';
-  if (t.ex) h += '<div class="tutEx"><b>Beispiel</b><br>' + t.ex + '</div>';
-  if (t.bars) h += '<div class="waage"><h3>Impuls-Waage zum Beispiel</h3>' + barsSVG(t.bars).svg + '</div>';
+  let h = '<h2>' + t.title + '</h2><p class="tutQ">' + t.frage + '</p>';
+  h += '<div class="scene">' + sceneSVG(t.scene) + '</div>';
+  h += '<div class="waage"><h3>Impuls-Waage</h3>' + barsSVG(t.bars, t.opt).svg + '</div>';
+  h += '<div class="tutSteps">' + t.steps.map((x, n) => '<div class="tutStep"><span class="num">' + (n + 1) + '</span><span>' + x + '</span></div>').join('') + '</div>';
+  if (t.merke) h += '<div class="merke">' + t.merke + '</div>';
   h += '<div class="mBtns"><button class="btn primary" data-act="tut-close">Schließen</button></div>';
   showModal(h);
 }
@@ -763,7 +893,9 @@ function openTut(i) {
 $('worlds').addEventListener('click', (e) => { const t = e.target.closest('[data-tut]'); if (t) { openTut(+t.dataset.tut); return; } const b = e.target.closest('[data-lv]'); if (b) openLevel(+b.dataset.lv); });
 $('btnHelp').addEventListener('click', () => { if (!S.running) openTut(Math.max(0, TUT.findIndex((t) => t.k === S.L.typ))); });
 $('btnBack').addEventListener('click', toMenu);
-$('btnGo').addEventListener('click', go);
+$('btnGo').addEventListener('click', () => { if (S.running) restart(); else go(); });
+$('tbSlow').addEventListener('click', () => { P.slow = !(P.slow !== false); saveP(); updTools(); });
+$('tbFast').addEventListener('click', () => { P.fast2 = !P.fast2; saveP(); updTools(); });
 $('cRange').addEventListener('input', (e) => { if (!S.running) setVal(+e.target.value); });
 $('cMinus').addEventListener('click', () => { if (!S.running) setVal(S.val - S.L.input.step); });
 $('cPlus').addEventListener('click', () => { if (!S.running) setVal(S.val + S.L.input.step); });
