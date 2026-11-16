@@ -1,0 +1,793 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#07051a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>REDLINE – Kupplung</title>
+<style>
+:root{
+  --bg0:#07051a; --bg1:#120a33; --ink:#eef1ff; --mut:#8c93bd; --cy:#19e6ff; --mg:#ff2fd0; --am:#ffb52e; --gr:#37ff8b; --rd:#ff3b5c;
+  --pn:rgba(16,11,46,.82); --line:rgba(140,150,255,.26); --top:52px;
+  --font:"Bahnschrift","DIN Alternate","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{touch-action:manipulation;-webkit-touch-callout:none;-webkit-text-size-adjust:100%;margin:0;height:100%;background:var(--bg0);color:var(--ink);font-family:var(--font);overscroll-behavior:none;-webkit-user-select:none;user-select:none;overflow:hidden}
+#app{position:fixed;inset:0;overflow:hidden;background:radial-gradient(120% 80% at 50% 0%,#1c1052 0%,var(--bg0) 62%)}
+button{font-family:inherit;color:inherit}
+canvas{display:block}
+
+#top{position:fixed;left:0;right:0;top:0;height:calc(var(--top) + env(safe-area-inset-top));padding:env(safe-area-inset-top) 12px 0;display:flex;align-items:center;gap:10px;z-index:5}
+#topTitle{flex:1;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.06em;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ico{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:rgba(20,14,56,.8);font-size:24px;line-height:1;display:grid;place-items:center;cursor:pointer;flex:none}
+.chip{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:17px;background:rgba(20,14,56,.8);border:1px solid var(--line);font-weight:800;font-variant-numeric:tabular-nums}
+.chip:empty{display:none}
+#btnBack{visibility:hidden}
+body[data-screen=level] #btnBack{visibility:visible}
+
+.scr{position:absolute;left:0;right:0;bottom:0;top:calc(var(--top) + env(safe-area-inset-top));display:none;padding:6px 12px calc(10px + env(safe-area-inset-bottom));z-index:2;flex-direction:column;min-height:0}
+.scr.active{display:flex}
+.card{background:var(--pn);border:1px solid var(--line);border-radius:18px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+
+.btn{border:1px solid rgba(140,150,255,.4);background:linear-gradient(180deg,rgba(62,50,150,.92),rgba(26,18,74,.96));border-radius:14px;padding:12px 18px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.05em;font-size:14px;cursor:pointer;min-height:44px;transition:transform .08s}
+.btn:active{transform:scale(.97) translateY(1px)}
+.btn:disabled{opacity:.4;pointer-events:none}
+.btn.primary{border-color:rgba(255,255,255,.55);background:linear-gradient(120deg,#19e6ff,#6a5cff 55%,#ff2fd0);color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.45);box-shadow:0 0 18px rgba(25,230,255,.35)}
+.btn.big{font-size:18px;padding:14px 26px;min-height:52px}
+
+/* Menü */
+.menuWrap{width:100%;max-width:820px;margin:0 auto;overflow:auto;-webkit-overflow-scrolling:touch;padding-bottom:20px}
+.hero{text-align:center;padding:6px 0 14px}
+.logo{font-size:clamp(40px,9vw,66px);font-weight:900;font-style:italic;letter-spacing:.04em;line-height:1;text-shadow:0 0 28px rgba(25,230,255,.35)}
+.logo span{color:var(--mg);text-shadow:0 0 28px rgba(255,47,208,.55)}
+.tag{margin-top:6px;color:var(--mut);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
+.world{padding:14px 14px 16px;margin-bottom:12px}
+.wHead{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.wHead b{font-size:17px;letter-spacing:.06em;text-transform:uppercase;font-style:italic}
+.schild{font-size:12px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;padding:3px 10px;border-radius:9px;border:1px solid}
+.schild.k{color:var(--cy);border-color:var(--cy);box-shadow:0 0 10px rgba(25,230,255,.35)}
+.schild.s{color:var(--mg);border-color:var(--mg);box-shadow:0 0 10px rgba(255,47,208,.35)}
+.wSub{color:var(--mut);font-size:13px;margin-bottom:10px;line-height:1.35}
+.lvGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.lv{border:1px solid var(--line);background:linear-gradient(180deg,rgba(50,40,130,.55),rgba(20,14,60,.7));border-radius:14px;padding:10px 10px 8px;text-align:left;cursor:pointer;min-height:74px}
+.lv:active{transform:scale(.97)}
+.lv .no{font-size:12px;color:var(--mut);font-weight:800}
+.lv .nm{font-weight:800;font-size:15px;margin:1px 0 3px}
+.lv .st{letter-spacing:2px;font-size:16px;color:#4a4a78}
+.lv .st i{font-style:normal}
+.lv .st i.on{color:var(--am);text-shadow:0 0 8px rgba(255,181,46,.6)}
+
+/* Level */
+#goal{display:flex;align-items:center;gap:12px;padding:8px 14px;flex:none}
+#goalTxt{flex:1;font-weight:800;font-size:15px;line-height:1.25}
+#goalTxt small{display:block;color:var(--mut);font-weight:600;font-size:12px}
+#tries{font-weight:800;font-size:13px;color:var(--mut);text-align:right;white-space:nowrap}
+#tries b{color:var(--am);letter-spacing:2px}
+#stage{position:relative;flex:1;min-height:150px;margin:8px 0;border-radius:18px;overflow:hidden;border:1px solid var(--line);background:#0a0724}
+#stage canvas{position:absolute;inset:0;width:100%;height:100%}
+#ctrl{display:flex;align-items:center;gap:14px;padding:10px 14px;flex:none}
+.cMain{flex:1;min-width:0}
+.cLab{font-weight:800;font-size:13px;color:var(--mut);letter-spacing:.04em;margin-bottom:4px;line-height:1.2}
+.cRow{display:flex;align-items:center;gap:10px}
+.cVal{min-width:96px;text-align:right;font-size:26px;font-weight:900;font-variant-numeric:tabular-nums;color:var(--cy);text-shadow:0 0 14px rgba(25,230,255,.5)}
+input[type=range]{flex:1;min-width:0;height:44px;-webkit-appearance:none;appearance:none;background:transparent;touch-action:none}
+input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:4px;background:linear-gradient(90deg,rgba(25,230,255,.55),rgba(255,47,208,.55))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:30px;height:30px;margin-top:-11px;border-radius:50%;background:#fff;border:3px solid var(--cy);box-shadow:0 0 14px rgba(25,230,255,.8)}
+input[type=range]::-moz-range-track{height:8px;border-radius:4px;background:linear-gradient(90deg,rgba(25,230,255,.55),rgba(255,47,208,.55))}
+input[type=range]::-moz-range-thumb{width:24px;height:24px;border-radius:50%;background:#fff;border:3px solid var(--cy)}
+body.running #ctrl{opacity:.45;pointer-events:none}
+
+/* Fenster */
+#modal{position:fixed;inset:0;z-index:20;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(5,3,20,.72);backdrop-filter:blur(3px)}
+#modal.show{display:flex}
+#modalCard{width:100%;max-width:540px;max-height:100%;overflow:auto;padding:18px 18px 16px;animation:pop .22s ease-out}
+@keyframes pop{from{transform:scale(.92);opacity:0}to{transform:none;opacity:1}}
+#modalCard h2{margin:0 0 6px;font-size:26px;font-style:italic;font-weight:900;letter-spacing:.04em;text-transform:none}
+#modalCard h2.win{color:var(--gr);text-shadow:0 0 16px rgba(55,255,139,.45)}
+#modalCard h2.lose{color:var(--rd);text-shadow:0 0 16px rgba(255,59,92,.4)}
+#modalCard p{margin:6px 0;line-height:1.4;font-size:15px}
+.stars{font-size:34px;letter-spacing:6px;color:#3c3c66;margin:2px 0 4px}
+.stars i{font-style:normal}
+.stars i.on{color:var(--am);text-shadow:0 0 14px rgba(255,181,46,.7)}
+.mBtns{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.mBtns .btn{flex:1;min-width:110px}
+.waage{margin:10px 0 4px;border:1px solid var(--line);border-radius:14px;padding:8px 10px 6px;background:rgba(8,5,30,.6)}
+.waage h3{margin:0 0 2px;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.waage svg{display:block;width:100%;height:auto}
+.evl{font-size:13px;color:#c9cdf0;line-height:1.5;margin-top:4px;font-variant-numeric:tabular-nums}
+.sumline{font-weight:800;font-size:14px;margin-top:2px}
+.sumline.good{color:var(--gr)}
+
+@media (max-width:640px){
+  #ctrl{flex-wrap:wrap}
+  #btnGo{width:100%}
+  .cVal{min-width:80px;font-size:22px}
+}
+@media (orientation:portrait) and (max-width:640px){
+  #stage::after{content:"Querformat ist besser ⟳";position:absolute;right:10px;bottom:8px;font-size:11px;color:var(--mut);font-weight:700}
+}
+
+.ico.sm{width:34px;height:34px;font-size:18px;font-weight:900;color:var(--am);border-radius:10px}
+.tutRow{display:flex;gap:10px;align-items:baseline;margin:6px 0;font-size:15px;line-height:1.35}
+.tg{flex:none;min-width:78px;text-align:center;font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:8px;border:1px solid var(--cy);color:var(--cy)}
+.tg.s{border-color:var(--am);color:var(--am)}
+.tutEx{margin:10px 0;padding:10px 12px;border-radius:12px;background:rgba(8,5,30,.6);border:1px solid var(--line);line-height:1.7;font-size:15px;font-variant-numeric:tabular-nums}
+.tutEx b{color:var(--gr)}
+
+#btnHelp{width:26px;height:26px;font-size:14px;font-style:italic;font-family:Georgia,serif;font-weight:700;color:var(--mut);background:transparent;border:1px solid rgba(140,150,255,.3);border-radius:50%;opacity:.7;align-self:flex-start;margin-top:2px}
+#btnHelp:active{opacity:1}
+.given{margin-top:4px;font-size:17px;font-weight:800;color:var(--cy)}
+.given b{font-size:21px;text-shadow:0 0 12px rgba(25,230,255,.55)}
+
+</style>
+</head>
+<body data-screen="menu">
+<div id="app">
+  <header id="top">
+    <button class="ico" id="btnBack" aria-label="Zurück">‹</button>
+    <div id="topTitle">REDLINE · KUPPLUNG</div>
+    <span class="chip" id="stStars"></span>
+  </header>
+
+  <section class="scr active" id="scrMenu">
+    <div class="menuWrap">
+      <div class="hero">
+        <div class="logo">KUPP<span>LUNG</span></div>
+        <div class="tag">Rechne den Stoß. Triff das Ziel.</div>
+      </div>
+      <div id="worlds"></div>
+    </div>
+  </section>
+
+  <section class="scr" id="scrLevel">
+    <div id="goal" class="card"><div id="goalTxt"></div><div id="tries"></div><button class="ico sm" id="btnHelp" aria-label="Info zum Aufgabentyp" title="Info">i</button></div>
+    <div id="stage"><canvas id="cv"></canvas></div>
+    <div id="ctrl" class="card">
+      <div class="cMain">
+        <div class="cLab" id="cLab"></div>
+        <div class="cRow">
+          <button class="ico" id="cMinus" aria-label="weniger">−</button>
+          <input type="range" id="cRange">
+          <button class="ico" id="cPlus" aria-label="mehr">+</button>
+          <div class="cVal" id="cVal"></div>
+        </div>
+      </div>
+      <button class="btn primary big" id="btnGo">▶ GO</button>
+    </div>
+  </section>
+
+  <div id="modal"><div class="card" id="modalCard"></div></div>
+</div>
+<script>
+/* KUPPLUNG – Physik-Kern (rein, ohne Oberfläche, im Browser und in Node nutzbar)
+   Eindimensional. Wagen sind Kästen der Länge KW, ohne Reibung.
+   Welt 1 "klebt": vollständig inelastischer Stoß → Klumpen mit v' = Σ(m·v) / Σm.
+   Welt 2 "stößt ab": Sprengbolzen trennt gekoppelte Wagen, Impuls bleibt erhalten, v_B − v_A = u.
+   Energie kommt nirgends vor. Rechts ist positiv. */
+'use strict';
+const KW = 8;                       // Wagenlänge in m
+const KCOL = ['#19e6ff', '#ff2fd0', '#ffb52e', '#37ff8b', '#a98bff'];
+
+const LEVELS = [
+  /* ---------------- Welt 1: klebt ---------------- */
+  { id: 1, world: 1, title: 'Anhänger', typ: 'tor', stoss: 'klebt',
+    text: 'Du rammst den Laster. Klack – die beiden kleben und rollen als ein Klumpen weiter. Der Klumpen soll durchs Tor, genau mit dem Soll-Tempo. Stell dein Tempo ein.',
+    veh: [{ id: 'du', name: 'DU', m: 2, v: 0, x: 0, face: 1 }, { id: 'b', name: 'Laster', m: 3, v: 0, x: 45, face: -1 }],
+    input: { kind: 'v', veh: 'du', min: 0, max: 20, step: 1, start: 8, unit: 'm/s', label: 'Dein Tempo v₀' },
+    goal: { type: 'gate', veh: 'any', vT: 6, tol: 0.2, dx: 25 }, sol: 15, hint: true },
+  { id: 2, world: 1, title: 'Aufholjagd', typ: 'tor', stoss: 'klebt',
+    text: 'Der Laster rollt schon. Hol ihn ein, kleb dich dran und fahr als Klumpen durchs Tor.',
+    veh: [{ id: 'du', name: 'DU', m: 3, v: 0, x: 0, face: 1 }, { id: 'b', name: 'Laster', m: 2, v: 5, x: 24, face: 1 }],
+    input: { kind: 'v', veh: 'du', min: 0, max: 20, step: 1, start: 8, unit: 'm/s', label: 'Dein Tempo v₀' },
+    goal: { type: 'gate', veh: 'any', vT: 8, tol: 0.2, dx: 25 }, sol: 10, hint: true },
+  { id: 3, world: 1, title: 'Ladung', typ: 'masse', stoss: 'klebt',
+    text: 'Dein Tempo ist fest. Dafür darfst du Ladung zuladen. Wie schwer muss dein Wagen sein? Ab jetzt gibt es keine Vorschau mehr.',
+    veh: [{ id: 'du', name: 'DU', m: 3, v: 12, x: 0, face: 1 }, { id: 'b', name: 'Laster', m: 4, v: 0, x: 36, face: -1 }],
+    input: { kind: 'm', veh: 'du', min: 1, max: 6, step: 1, start: 4, unit: 't', label: 'Deine Masse (mit Ladung)' },
+    goal: { type: 'gate', veh: 'any', vT: 4, tol: 0.2, dx: 25 }, sol: 2 },
+  { id: 4, world: 1, title: 'Gegenverkehr', typ: 'stand', stoss: 'klebt',
+    text: 'Frontal! Nach dem Klack soll der Klumpen stehen bleiben – mitten im Parkfeld. Achte auf die Richtungen.',
+    veh: [{ id: 'du', name: 'DU', m: 2, v: 0, x: 0, face: 1 }, { id: 'b', name: 'Laster', m: 4, v: -10, x: 100, face: -1 }],
+    input: { kind: 'v', veh: 'du', min: 0, max: 30, step: 1, start: 12, unit: 'm/s', label: 'Dein Tempo v₀' },
+    goal: { type: 'stop', veh: 'du', tol: 0.15, zh: 14 }, sol: 20 },
+  { id: 5, world: 1, title: 'Kette', typ: 'kette', stoss: 'klebt',
+    text: 'Zwei Stöße hintereinander. Am Ende fährt ein einziger Klumpen mit Soll-Tempo durchs Tor.',
+    veh: [{ id: 'du', name: 'DU', m: 2, v: 0, x: 0, face: 1 }, { id: 'b', name: 'Wagen', m: 2, v: 0, x: 40, face: -1 }, { id: 'c', name: 'Laster', m: 4, v: -2, x: 110, face: -1 }],
+    input: { kind: 'v', veh: 'du', min: 0, max: 30, step: 1, start: 12, unit: 'm/s', label: 'Dein Tempo v₀' },
+    goal: { type: 'gate', veh: 'any', vT: 4, tol: 0.2, dx: 32 }, sol: 20 },
+  /* ---------------- Welt 2: stößt ab (Start aus der Ruhe, Σp = 0) ---------------- */
+  { id: 6, world: 2, title: 'Rückstoß', typ: 'rueck', stoss: 'stößt ab',
+    text: 'A und B kleben noch und stehen still. Gleich zündet der Sprengbolzen – dann stoßen sich die beiden ab. Der schwere Wagen B soll mit dem Soll-Tempo durchs Tor. Du legst fest, wie schnell A nach links wegfährt.',
+    veh: [{ id: 'a', name: 'A', m: 1, v: 0, x: 0, face: 1 }, { id: 'b', name: 'B', m: 3, v: 0, x: 8, face: 1 }],
+    couple: [['a', 'b']], split: { t: 1.5, a: 'a', b: 'b' },
+    input: { kind: 'va', min: -20, max: 0, step: 1, start: -4, unit: 'm/s', label: 'Tempo von A nach dem Start' },
+    goal: { type: 'gate', veh: 'b', vT: 3, tol: 0.2, dx: 16 }, sol: -9 },
+  { id: 7, world: 2, title: 'Ladung für B', typ: 'rueckm', stoss: 'stößt ab',
+    text: 'Wieder startet alles aus der Ruhe. Diesmal ist bekannt, wie A nach dem Start fährt. Du wählst die Masse von B (Ladung), damit B mit dem Soll-Tempo durchs Tor kommt.',
+    veh: [{ id: 'a', name: 'A', m: 2, v: 0, x: 0, face: 1 }, { id: 'b', name: 'B', m: 3, v: 0, x: 8, face: 1 }],
+    couple: [['a', 'b']], split: { t: 1.5, a: 'a', b: 'b', va: -8 },
+    input: { kind: 'm', veh: 'b', min: 1, max: 8, step: 1, start: 3, unit: 't', label: 'Masse von B (mit Ladung)' },
+    goal: { type: 'gate', veh: 'b', vT: 4, tol: 0.2, dx: 18 }, sol: 4 },
+  { id: 8, world: 2, title: 'Raketenstufe', typ: 'rueck', stoss: 'stößt ab',
+    text: 'B ist die kleine Rakete, A die schwere Stufe. Die Rakete soll mit dem Soll-Tempo durchs Tor. Wie schnell muss die Stufe A dafür nach links wegfahren?',
+    veh: [{ id: 'a', name: 'A', m: 3, v: 0, x: 0, face: 1 }, { id: 'b', name: 'B', m: 1, v: 0, x: 8, face: 1 }],
+    couple: [['a', 'b']], split: { t: 1.5, a: 'a', b: 'b' },
+    input: { kind: 'va', min: -10, max: 0, step: 1, start: -2, unit: 'm/s', label: 'Tempo von A nach dem Start' },
+    goal: { type: 'gate', veh: 'b', vT: 12, tol: 0.2, dx: 30 }, sol: -4 },
+];
+LEVELS.forEach((L) => L.veh.forEach((o, i) => { o.col = KCOL[i % KCOL.length]; }));
+
+const idxOf = (L, id) => L.veh.findIndex((o) => o.id === id);
+const fmt = (v, d = 1) => (Math.abs(v) < 0.5 * Math.pow(10, -d) ? 0 : v).toFixed(d).replace('.', ',').replace('-', '−');
+
+/* ---- Simulation: Ereignisse (Stoß / Sprengung) nacheinander, dazwischen gleichförmig ---- */
+function simulate(L, val, opt) {
+  const tMax = (opt && opt.tMax) || 40;
+  const V = L.veh.map((o) => ({ id: o.id, m: o.m, v: o.v, x: o.x }));
+  const inp = L.input;
+  if (inp.kind === 'v') V[idxOf(L, inp.veh)].v = val;
+  else if (inp.kind === 'm') V[idxOf(L, inp.veh)].m = val;
+  const init = V.map((o) => ({ id: o.id, m: o.m, v: o.v, x: o.x }));
+  const grp = V.map((_, i) => i);
+  (L.couple || []).forEach((pair) => {
+    const ii = pair.map((id) => idxOf(L, id));
+    ii.forEach((i) => { grp[i] = grp[ii[0]]; V[i].v = V[ii[0]].v; });
+  });
+  let t = 0;
+  const events = [];
+  const tracks = V.map((o, i) => [{ t: 0, x: o.x, v: o.v, g: grp[i] }]);
+  const push = () => V.forEach((o, i) => tracks[i].push({ t, x: o.x, v: o.v, g: grp[i] }));
+  const members = (g) => V.map((_, i) => i).filter((i) => grp[i] === g);
+  const snap = (g) => { const mm = members(g); return { ids: mm.map((i) => V[i].id), m: mm.reduce((s, i) => s + V[i].m, 0), v: V[mm[0]].v }; };
+  let splitDone = !L.split;
+  let nextG = V.length;
+  for (let guard = 0; guard < 60; guard++) {
+    const order = V.map((_, i) => i).sort((a, b) => V[a].x - V[b].x);
+    let best = Infinity, pair = null;
+    for (let k = 0; k < order.length - 1; k++) {
+      const i = order[k], j = order[k + 1];
+      if (grp[i] === grp[j]) continue;
+      const closing = V[i].v - V[j].v;
+      if (closing <= 1e-9) continue;
+      const dt = Math.max(0, V[j].x - V[i].x - KW) / closing;
+      if (dt < best) { best = dt; pair = [i, j]; }
+    }
+    const tSplit = splitDone ? Infinity : L.split.t;
+    const tCol = pair ? t + best : Infinity;
+    const adv = (to) => { const dt = to - t; V.forEach((o) => { o.x += o.v * dt; }); t = to; };
+    if (tSplit <= tCol && tSplit < tMax) {
+      adv(tSplit); splitDone = true;
+      const ia = idxOf(L, L.split.a), ib = idxOf(L, L.split.b);
+      const g0 = grp[ia];
+      const mm = members(g0), M = mm.reduce((s, i) => s + V[i].m, 0), Vc = V[ia].v;
+      const before = [snap(g0)];
+      const x = V[ia].x + KW / 2;
+      const va = inp.kind === 'va' ? val : L.split.va;
+      V[ia].v = va;
+      V[ib].v = (M * Vc - V[ia].m * va) / V[ib].m;
+      grp[ib] = nextG++;
+      events.push({ t, kind: 'split', x, before, after: [snap(grp[ia]), snap(grp[ib])] });
+      push();
+    } else if (pair && tCol < tMax) {
+      adv(tCol);
+      const [i, j] = pair;
+      const gi = grp[i], gj = grp[j];
+      const before = [snap(gi), snap(gj)];
+      const mem = members(gi).concat(members(gj));
+      const M = mem.reduce((s, k) => s + V[k].m, 0), P = mem.reduce((s, k) => s + V[k].m * V[k].v, 0);
+      const x = (V[i].x + V[j].x) / 2;
+      mem.forEach((k) => { V[k].v = P / M; grp[k] = gi; });
+      events.push({ t, kind: 'couple', x, before, after: [snap(gi)] });
+      push();
+    } else break;
+  }
+  return { L, val, init, V, tracks, events, tMax, tLast: events.length ? events[events.length - 1].t : 0 };
+}
+
+/* Zustand zur Zeit t (stückweise gleichförmig) */
+function stateAt(sim, t) {
+  return sim.tracks.map((tr, i) => {
+    let k = 0;
+    while (k + 1 < tr.length && tr[k + 1].t <= t + 1e-9) k++;
+    const p = tr[k];
+    return { x: p.x + p.v * (t - p.t), v: p.v, g: p.g, m: sim.init[i].m };
+  });
+}
+function groupsAt(sim, t) {
+  const st = stateAt(sim, t), map = new Map();
+  st.forEach((s, i) => { if (!map.has(s.g)) map.set(s.g, []); map.get(s.g).push(i); });
+  return [...map.values()].map((mem) => ({ mem, m: mem.reduce((a, i) => a + st[i].m, 0), v: st[mem[0]].v, p: mem.reduce((a, i) => a + st[i].m * st[i].v, 0), x: mem.reduce((a, i) => a + st[i].x, 0) / mem.length }));
+}
+
+/* ---- Bewertung ---- */
+function evaluate(L, sim) {
+  const g = L.goal, n = sim.init.length, coup = !L.split;
+  const res = { ok: false, code: '', msg: '', v: null, tc: null };
+  const ids = g.veh === 'any' ? sim.init.map((_, i) => i) : [idxOf(L, g.veh)];
+  const nEv = sim.events.length;
+  if (g.type === 'gate') {
+    const dir = g.vT >= 0 ? 1 : -1;
+    let best = null;
+    ids.forEach((vi) => {
+      const tr = sim.tracks[vi];
+      for (let k = 0; k < tr.length; k++) {
+        const p = tr[k], tEnd = k + 1 < tr.length ? tr[k + 1].t : sim.tMax;
+        if (p.v * dir <= 1e-9) continue;
+        const f = p.x + dir * KW / 2;
+        if ((f - L.gx) * dir > 1e-9) continue;
+        const tc = p.t + (L.gx - f) / p.v;
+        if (tc <= tEnd + 1e-9) { if (!best || tc < best.t) best = { t: tc, v: p.v, vi }; break; }
+      }
+    });
+    if (!best) {
+      if (coup && nEv === 0) { res.code = 'nocontact'; res.msg = 'Kein Stoß – die Wagen haben sich verpasst.'; }
+      else { res.code = 'short'; const gr = groupsAt(sim, sim.tLast + 0.001)[0]; res.v = gr ? gr.v : 0; res.msg = (coup ? 'Der Klumpen' : 'Der Wagen') + ' kommt nicht durchs Tor (er fährt mit ' + fmt(sim.V[ids[0]].v) + ' m/s).'; }
+    } else {
+      res.tc = best.t; res.v = best.v;
+      const st = stateAt(sim, best.t);
+      const together = st.filter((s) => s.g === st[best.vi].g).length;
+      if (coup && together < n) { res.code = 'early'; res.msg = 'Zu früh am Tor – nicht alle Wagen waren schon verklebt.'; }
+      else {
+        const dv = best.v - g.vT;
+        if (Math.abs(dv) <= g.tol + 1e-9) { res.ok = true; res.code = 'ok'; res.msg = 'Tor mit ' + fmt(best.v) + ' m/s. Soll: ' + fmt(g.vT) + ' m/s.'; }
+        else { res.code = Math.abs(best.v) < Math.abs(g.vT) ? 'slow' : 'fast'; res.msg = 'Tor mit ' + fmt(best.v) + ' m/s – ' + (Math.abs(best.v) < Math.abs(g.vT) ? 'zu langsam' : 'zu schnell') + '. Soll: ' + fmt(g.vT) + ' m/s.'; }
+      }
+    }
+  } else { // stop
+    const tF = sim.tLast + 0.001, st = stateAt(sim, tF), vi = ids[0];
+    const mem = st.map((s, i) => i).filter((i) => st[i].g === st[vi].g);
+    if (coup && nEv === 0) { res.code = 'nocontact'; res.msg = 'Kein Stoß – die Wagen haben sich verpasst.'; }
+    else if (coup && mem.length < n) { res.code = 'partial'; res.msg = 'Nicht alle Wagen sind verklebt.'; }
+    else {
+      const v = st[vi].v; res.v = v;
+      const lo = Math.min(...mem.map((i) => st[i].x - KW / 2)), hi = Math.max(...mem.map((i) => st[i].x + KW / 2));
+      if (Math.abs(v) > g.tol + 1e-9) { res.code = 'moving'; res.msg = (coup ? 'Der Klumpen' : 'Wagen A') + ' rollt weiter: ' + fmt(v) + ' m/s. Er sollte stehen.'; }
+      else if (lo < L.zone[0] - 1e-6 || hi > L.zone[1] + 1e-6) { res.code = 'outside'; res.msg = 'Er steht – aber nicht auf dem Parkfeld.'; }
+      else { res.ok = true; res.code = 'ok'; res.msg = (coup ? 'Der Klumpen steht' : 'Wagen A steht') + ' im Parkfeld. Impuls null!'; }
+    }
+  }
+  return res;
+}
+
+/* Ende der Vorführung (Sekunden) */
+function runEnd(L, sim, res) {
+  if (res.tc != null) return Math.min(res.tc + 0.9, sim.tMax);
+  return Math.min(sim.tLast + (L.goal.type === 'stop' ? 2.2 : 3.2), sim.tMax);
+}
+
+/* Abgeleitete Größen aus der Musterlösung: Tor, Parkfeld, Bildausschnitt */
+function prepare(L) {
+  const sim = simulate(L, L.sol);
+  const ev = sim.events[sim.events.length - 1];
+  const g = L.goal;
+  if (g.type === 'gate') { const dir = g.vT >= 0 ? 1 : -1; L.gx = ev.x + dir * g.dx; }
+  else {
+    const tF = sim.tLast + 0.001, st = stateAt(sim, tF), vi = idxOf(L, g.veh);
+    const mem = st.map((s, i) => i).filter((i) => st[i].g === st[vi].g);
+    const c = (Math.min(...mem.map((i) => st[i].x - KW / 2)) + Math.max(...mem.map((i) => st[i].x + KW / 2))) / 2;
+    L.zone = [c - g.zh, c + g.zh];
+  }
+  const res = evaluate(L, sim), tE = runEnd(L, sim, res);
+  let lo = Infinity, hi = -Infinity;
+  for (let t = 0; t <= tE; t += 0.05) stateAt(sim, t).forEach((s) => { lo = Math.min(lo, s.x - KW / 2); hi = Math.max(hi, s.x + KW / 2); });
+  const ps = [lo, hi];
+  if (L.gx != null) ps.push(L.gx);
+  if (L.zone) ps.push(L.zone[0], L.zone[1]);
+  lo = Math.min(...ps) - 8; hi = Math.max(...ps) + 8;
+  if (hi - lo < 70) { const c = (lo + hi) / 2; lo = c - 35; hi = c + 35; }
+  L.view = [lo, hi];
+  L.solRes = res;
+  return L;
+}
+LEVELS.forEach(prepare);
+
+/* Vorschau (Hilfe in Level 1–2): Tempo des Klumpens nach dem Stoß */
+function previewSpeed(L, val) {
+  const sim = simulate(L, val);
+  if (!sim.events.length) return null;
+  const gr = groupsAt(sim, sim.tLast + 0.001);
+  const big = gr.sort((a, b) => b.mem.length - a.mem.length)[0];
+  return big.mem.length === sim.init.length ? big.v : null;
+}
+function starsFor(attempts) { return attempts <= 1 ? 3 : attempts <= 3 ? 2 : 1; }
+
+if (typeof module !== 'undefined') module.exports = { KW, LEVELS, simulate, stateAt, groupsAt, evaluate, runEnd, prepare, previewSpeed, starsFor, fmt, idxOf };
+
+/* KUPPLUNG – Oberfläche, Zeichnung, Ablauf */
+const $ = (id) => document.getElementById(id);
+window.__errs = [];
+window.addEventListener('error', (e) => window.__errs.push(String(e.message)));
+
+let P = { stars: {}, seen: {} };
+try { P = Object.assign(P, JSON.parse(localStorage.getItem('kupplung-v1') || '{}')); } catch (e) { /* ohne Speicher weiter */ }
+const saveP = () => { try { localStorage.setItem('kupplung-v1', JSON.stringify(P)); } catch (e) { /* egal */ } };
+
+const S = { L: null, li: 0, val: 0, attempts: 0, running: false, sim: null, res: null, t: 0, tEnd: 0, last: 0, fired: 0, hit: null, fx: [], parts: [], shake: 0, fast: false };
+const cvEl = $('cv'), ctx = cvEl.getContext('2d');
+let CW = 300, CH = 200, DPR = 1;
+
+/* ---------------- Bildschirme ---------------- */
+function setScreen(n) {
+  document.body.dataset.screen = n;
+  $('scrMenu').classList.toggle('active', n === 'menu');
+  $('scrLevel').classList.toggle('active', n === 'level');
+  $('topTitle').textContent = n === 'menu' ? 'REDLINE · KUPPLUNG' : 'Welt ' + S.L.world + ' · ' + S.L.id + ' ' + S.L.title;
+}
+function totalStars() { return LEVELS.reduce((a, L) => a + (P.stars[L.id] || 0), 0); }
+function updStars() { $('stStars').textContent = '★ ' + totalStars() + '/' + LEVELS.length * 3; }
+
+function buildMenu() {
+  const worlds = [
+    { n: 1, title: 'Welt 1 · Kleben', cls: 'k', tag: 'klebt', sub: 'Vollständig inelastischer Stoß: Die Wagen kleben zusammen und rollen als ein Klumpen weiter.' },
+    { n: 2, title: 'Welt 2 · Abstoßen', cls: 's', tag: 'stößt ab', sub: 'Zwei Wagen starten zusammen aus der Ruhe (Gesamtimpuls 0) und werden durch einen Sprengbolzen getrennt.' },
+  ];
+  $('worlds').innerHTML = worlds.map((w) => '<div class="card world"><div class="wHead"><b>' + w.title + '</b><span class="schild ' + w.cls + '">' + w.tag + '</span></div><div class="wSub">' + w.sub + '</div><div class="lvGrid">' +
+    LEVELS.map((L, i) => L.world === w.n ? '<button class="lv" data-lv="' + i + '"><div class="no">LEVEL ' + L.id + '</div><div class="nm">' + L.title + '</div><div class="st">' +
+      [1, 2, 3].map((k) => '<i class="' + ((P.stars[L.id] || 0) >= k ? 'on' : '') + '">★</i>').join('') + '</div></button>' : '').join('') + '</div></div>').join('');
+  updStars();
+}
+
+function goal() {
+  const L = S.L, g = L.goal, coup = !L.split;
+  const who = g.veh === 'any' ? 'Klumpen' : (L.veh[idxOf(L, g.veh)].id === 'du' ? 'Du' : 'Wagen ' + L.veh[idxOf(L, g.veh)].name);
+  let t;
+  if (g.type === 'gate') t = who + ' durchs Tor – Tempo <b style="color:var(--am)">' + fmt(g.vT) + ' m/s</b> (± ' + fmt(g.tol) + ')';
+  else t = (coup ? 'Der Klumpen' : 'Wagen A') + ' bleibt im Parkfeld <b style="color:var(--gr)">stehen</b> (v = 0)';
+  let sm = 'Rechts ist positiv, links ist negativ.';
+  if (L.split) sm = 'Start: beide Wagen stehen zusammen still (Gesamtimpuls = 0). ' + sm;
+  if (L.split && L.split.va != null) t += '<div class="given">Gegeben: A fährt nach dem Start mit <b>' + fmt(L.split.va) + ' m/s</b></div>';
+  $('goalTxt').innerHTML = t + '<small>' + sm + '</small>';
+  const nx = starsFor(S.attempts + 1);
+  $('tries').innerHTML = 'Versuch ' + (S.attempts + 1) + '<br><b>' + '★'.repeat(nx) + '</b>';
+}
+
+function setCtrl() {
+  const inp = S.L.input, r = $('cRange');
+  r.min = inp.min; r.max = inp.max; r.step = inp.step; r.value = S.val;
+  $('cLab').textContent = inp.label;
+  $('cVal').textContent = fmt(S.val, 0) + ' ' + inp.unit;
+}
+function setVal(v) {
+  const inp = S.L.input;
+  S.val = Math.max(inp.min, Math.min(inp.max, v));
+  $('cRange').value = S.val;
+  $('cVal').textContent = fmt(S.val, 0) + ' ' + inp.unit;
+  S.sim = simulate(S.L, S.val); S.t = 0; S.hit = null;
+  draw();
+}
+
+function openLevel(i) {
+  S.li = i; S.L = LEVELS[i]; S.val = S.L.input.start; S.attempts = 0; S.running = false; S.fx = []; S.parts = []; S.hit = null;
+  document.body.classList.remove('running');
+  closeModal();
+  setScreen('level');
+  goal(); setCtrl();
+  requestAnimationFrame(() => { layout(); setVal(S.val); if (!P.seen[S.L.id] && !window.__noIntro) showBrief(); });
+}
+function toMenu() { S.running = false; document.body.classList.remove('running'); closeModal(); buildMenu(); setScreen('menu'); }
+
+/* ---------------- Fenster ---------------- */
+function showModal(html) { $('modalCard').innerHTML = html; $('modal').classList.add('show'); }
+function closeModal() { $('modal').classList.remove('show'); }
+function showBrief() {
+  const L = S.L;
+  showModal('<h2>' + L.title + '</h2><p>' + L.text + '</p>' + (L.id === 1 ? '<p style="color:var(--mut)">Die Zahlen an den Wagen zeigen Masse und Tempo. Rechts ist positiv. Das kleine i oben rechts erklärt dir den Aufgabentyp mit einer Beispielrechnung.</p>' : '') + '<div class="mBtns"><button class="btn primary" data-act="brief">Los</button></div>');
+}
+
+function segsOf(groups, sim) {
+  const out = [];
+  groups.forEach((g) => {
+    if (Math.abs(g.p) < 1e-9) return;
+    out.push({ p: g.p, label: g.m + '·' + fmt(g.v, Math.abs(g.v % 1) > 1e-6 ? 1 : 0), parts: g.mem.map((i) => ({ col: sim.L.veh[i].col, share: sim.init[i].m / g.m })) });
+  });
+  return out;
+}
+function barsSVG(rows) {
+  const sums = rows.map((r) => r.segs.reduce((a, s) => a + s.p, 0));
+  const mx = Math.max(1, ...rows.map((r) => Math.max(r.segs.filter((s) => s.p > 0).reduce((a, s) => a + s.p, 0), -r.segs.filter((s) => s.p < 0).reduce((a, s) => a + s.p, 0))));
+  const k = 185 / mx, x0 = 210;
+  let svg = '<svg viewBox="0 0 420 124" xmlns="http://www.w3.org/2000/svg" font-family="inherit">';
+  svg += '<line x1="' + x0 + '" y1="6" x2="' + x0 + '" y2="116" stroke="#8c93bd" stroke-width="1.5" stroke-dasharray="3 3"/><text x="' + (x0 + 4) + '" y="116" fill="#8c93bd" font-size="10">0</text>';
+  rows.forEach((r, ri) => {
+    const y = 22 + ri * 54;
+    svg += '<text x="6" y="' + (y - 6) + '" fill="#8c93bd" font-size="10" font-weight="700" letter-spacing="1">' + r.name + '</text>';
+    let pos = 0, neg = 0;
+    r.segs.forEach((s) => {
+      const w = Math.abs(s.p) * k, xs = s.p > 0 ? x0 + pos : x0 - neg - w;
+      if (s.p > 0) pos += w; else neg += w;
+      let off = 0;
+      s.parts.forEach((pt) => { const ww = w * pt.share; svg += '<rect x="' + (xs + off).toFixed(1) + '" y="' + y + '" width="' + ww.toFixed(1) + '" height="30" fill="' + pt.col + '" fill-opacity=".85"/>'; off += ww; });
+      svg += '<rect x="' + xs.toFixed(1) + '" y="' + y + '" width="' + w.toFixed(1) + '" height="30" fill="none" stroke="#07051a" stroke-width="2"/>';
+      if (w > 34) svg += '<text x="' + (xs + w / 2).toFixed(1) + '" y="' + (y + 20) + '" text-anchor="middle" fill="#07051a" font-size="13" font-weight="900">' + s.label + '</text>';
+    });
+    if (!r.segs.length) svg += '<text x="' + (x0 + 8) + '" y="' + (y + 20) + '" fill="#37ff8b" font-size="13" font-weight="800">Σp = 0</text>';
+  });
+  svg += '</svg>';
+  return { svg, sums };
+}
+function waage(sim) {
+  const rows = [{ name: 'VORHER', segs: segsOf(groupsAt(sim, 0), sim) }, { name: 'NACHHER', segs: segsOf(groupsAt(sim, sim.tLast + 0.001), sim) }];
+  const { svg, sums } = barsSVG(rows);
+  const ev = sim.events.map((e) => {
+    const f = (g) => g.m + ' t · ' + fmt(g.v) + ' m/s';
+    return (e.kind === 'couple' ? 'Stoß: ' + e.before.map(f).join(' + ') + ' → <b>' + f(e.after[0]) + '</b>' : 'Abstoßen: ' + f(e.before[0]) + ' → <b>' + e.after.map(f).join(' + ') + '</b>');
+  });
+  return '<div class="waage"><h3>Impuls-Waage (m · v)</h3>' + svg + '<div class="sumline good">Σp vorher = ' + fmt(sums[0]) + ' · Σp nachher = ' + fmt(sums[1]) + ' t·m/s</div>' + (ev.length ? '<div class="evl">' + ev.join('<br>') + '</div>' : '') + '</div>';
+}
+
+function showResult() {
+  const res = S.res, st = starsFor(S.attempts), last = S.li >= LEVELS.length - 1;
+  let h = res.ok ? '<h2 class="win">Geschafft!</h2><div class="stars">' + [1, 2, 3].map((k) => '<i class="' + (st >= k ? 'on' : '') + '">★</i>').join('') + '</div>' : '<h2 class="lose">Daneben</h2>';
+  h += '<p>' + res.msg + '</p>' + waage(S.sim) + '<div class="mBtns">';
+  h += res.ok ? '<button class="btn" data-act="again">Nochmal</button><button class="btn primary" data-act="next">' + (last ? 'Menü' : 'Weiter ▶') + '</button>' : '<button class="btn" data-act="menu">Menü</button><button class="btn primary" data-act="again">Nochmal</button>';
+  showModal(h + '</div>');
+}
+
+/* ---------------- Ablauf ---------------- */
+function go() {
+  if (S.running) return;
+  S.attempts++;
+  S.sim = simulate(S.L, S.val);
+  S.res = evaluate(S.L, S.sim);
+  S.tEnd = runEnd(S.L, S.sim, S.res);
+  S.t = 0; S.fired = 0; S.hit = null; S.fx = []; S.parts = []; S.shake = 0;
+  S.running = true;
+  document.body.classList.add('running');
+  if (S.fast) { S.t = S.tEnd; S.fired = S.sim.events.length; S.hit = S.res.tc != null ? { v: S.res.v, ok: S.res.ok } : null; finish(); return; }
+  S.last = performance.now();
+  requestAnimationFrame(frame);
+}
+function frame(now) {
+  if (!S.running) return;
+  const dtR = Math.min(0.05, (now - S.last) / 1000); S.last = now;
+  const nearEv = S.sim.events.some((e) => Math.abs(e.t - S.t) < 0.25);
+  S.t += dtR * (nearEv ? 0.3 : S.t > S.sim.tLast + 0.6 ? 1.4 : 1);
+  while (S.fired < S.sim.events.length && S.sim.events[S.fired].t <= S.t) burst(S.sim.events[S.fired++]);
+  if (S.res.tc != null && !S.hit && S.t >= S.res.tc) { S.hit = { v: S.res.v, ok: S.res.ok }; S.shake = Math.max(S.shake, 0.4); }
+  draw(dtR);
+  if (S.t >= S.tEnd) { finish(); return; }
+  requestAnimationFrame(frame);
+}
+function finish() {
+  S.running = false;
+  document.body.classList.remove('running');
+  draw(0);
+  if (S.res.ok) { const st = starsFor(S.attempts); if (st > (P.stars[S.L.id] || 0)) { P.stars[S.L.id] = st; saveP(); } }
+  updStars(); goal();
+  if (S.fast) showResult(); else setTimeout(() => { if (!S.running) showResult(); }, 650);
+}
+function burst(ev) {
+  const v = view(), x = v.X(ev.x), y = v.gy - 26;
+  S.fx.push({ born: performance.now(), x, y, txt: ev.kind === 'couple' ? 'KLACK!' : 'PENG!' });
+  S.shake = 1;
+  const cols = ['#ffffff', '#19e6ff', '#ff2fd0', '#ffb52e'];
+  for (let i = 0; i < 34; i++) { const a = Math.random() * Math.PI * 2, s = 50 + Math.random() * 220; S.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 40, life: 0.5 + Math.random() * 0.5, age: 0, col: cols[i % 4] }); }
+}
+
+/* ---------------- Zeichnen ---------------- */
+function layout() {
+  const r = cvEl.getBoundingClientRect();
+  DPR = Math.min(2, window.devicePixelRatio || 1);
+  CW = Math.max(120, r.width); CH = Math.max(120, r.height);
+  cvEl.width = Math.round(CW * DPR); cvEl.height = Math.round(CH * DPR);
+}
+function view() {
+  const [a, b] = S.L.view, pad = 16, sc = (CW - 2 * pad) / (b - a);
+  return { sc, a, X: (x) => pad + (x - a) * sc, gy: CH * 0.78 };
+}
+const rr = (c, x, y, w, h, r) => { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); };
+
+function drawCar(c, cx, gy, w, m, col, face, nm) {
+  const truck = m >= 3, hh = w * Math.min(0.62, 0.3 + 0.05 * m), wr = w * 0.1;
+  const bb = -wr * 1.7, bt = bb - hh * 0.52;
+  c.save(); c.translate(cx, gy); c.scale(face, 1);
+  c.shadowColor = col; c.shadowBlur = 14; c.lineWidth = 2; c.strokeStyle = col; c.lineJoin = 'round';
+  const gr = c.createLinearGradient(0, bt - hh * 0.5, 0, bb); gr.addColorStop(0, col + 'aa'); gr.addColorStop(1, col + '33');
+  c.fillStyle = gr;
+  if (!truck) {
+    rr(c, -w / 2, bt, w, bb - bt, w * 0.06); c.fill(); c.stroke();
+    c.beginPath(); c.moveTo(-w * 0.26, bt); c.lineTo(-w * 0.12, bt - hh * 0.42); c.lineTo(w * 0.2, bt - hh * 0.42); c.lineTo(w * 0.36, bt); c.closePath(); c.fill(); c.stroke();
+    c.shadowBlur = 0; c.fillStyle = 'rgba(10,8,40,.8)';
+    c.beginPath(); c.moveTo(-w * 0.2, bt - 2); c.lineTo(-w * 0.1, bt - hh * 0.36); c.lineTo(w * 0.17, bt - hh * 0.36); c.lineTo(w * 0.29, bt - 2); c.closePath(); c.fill();
+  } else {
+    rr(c, -w / 2, bt - hh * 0.46, w * 0.62, bb - bt + hh * 0.46, w * 0.04); c.fill(); c.stroke();
+    c.beginPath(); c.moveTo(w * 0.14, bb); c.lineTo(w * 0.14, bt - hh * 0.28); c.lineTo(w * 0.36, bt - hh * 0.28); c.lineTo(w * 0.5, bt + hh * 0.05); c.lineTo(w * 0.5, bb); c.closePath(); c.fill(); c.stroke();
+    c.shadowBlur = 0; c.fillStyle = 'rgba(10,8,40,.8)';
+    c.beginPath(); c.moveTo(w * 0.2, bt - hh * 0.22); c.lineTo(w * 0.34, bt - hh * 0.22); c.lineTo(w * 0.44, bt + hh * 0.02); c.lineTo(w * 0.2, bt + hh * 0.02); c.closePath(); c.fill();
+  }
+  c.shadowBlur = 0;
+  [-w * 0.28, w * 0.28].forEach((wx) => { c.fillStyle = '#0b0a22'; c.beginPath(); c.arc(wx, -wr, wr, 0, 7); c.fill(); c.strokeStyle = col; c.lineWidth = 2; c.stroke(); c.fillStyle = col; c.beginPath(); c.arc(wx, -wr, wr * 0.35, 0, 7); c.fill(); });
+  c.fillStyle = '#fff6c0'; c.shadowColor = '#ffe27a'; c.shadowBlur = 8; c.fillRect(w / 2 - 3, bb - hh * 0.22, 3, hh * 0.14);
+  c.fillStyle = '#ff3b5c'; c.shadowColor = '#ff3b5c'; c.fillRect(-w / 2, bb - hh * 0.22, 3, hh * 0.14);
+  c.restore();
+  c.save(); c.font = '900 ' + Math.max(10, Math.min(17, w * 0.2)) + 'px Bahnschrift,system-ui,sans-serif'; c.textAlign = 'center'; c.fillStyle = '#fff'; c.shadowColor = '#000'; c.shadowBlur = 4;
+  c.fillText((nm ? nm + ' ' : '') + m + ' t', cx + (truck ? -w * 0.19 * face : 0), gy + bt - (truck ? hh * 0.0 : 0) + (bb - bt) * 0.72); c.restore();
+}
+
+function arrow(c, x, y, len, col) {
+  if (Math.abs(len) < 2) return;
+  const d = Math.sign(len);
+  c.save(); c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 3; c.shadowColor = col; c.shadowBlur = 10; c.lineCap = 'round';
+  c.beginPath(); c.moveTo(x, y); c.lineTo(x + len, y); c.stroke();
+  c.beginPath(); c.moveTo(x + len + d * 7, y); c.lineTo(x + len - d * 3, y - 6); c.lineTo(x + len - d * 3, y + 6); c.closePath(); c.fill(); c.restore();
+}
+
+function draw(dtR) {
+  if (!S.L || !S.sim) return;
+  const c = ctx, L = S.L, v = view(), gy = v.gy, now = performance.now();
+  c.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const g = c.createLinearGradient(0, 0, 0, CH);
+  g.addColorStop(0, '#07051a'); g.addColorStop(0.55, '#1a0f48'); g.addColorStop(gy / CH, '#2a1466'); g.addColorStop(Math.min(1, gy / CH + 0.001), '#0c0a2b'); g.addColorStop(1, '#07051a');
+  c.fillStyle = g; c.fillRect(0, 0, CW, CH);
+  c.save();
+  if (S.shake > 0.01) { c.translate((Math.random() - 0.5) * 9 * S.shake, (Math.random() - 0.5) * 6 * S.shake); S.shake *= Math.pow(0.02, dtR || 0.016); }
+  // Sterne und Skyline
+  for (let i = 0; i < 46; i++) { const sx = (i * 137.5) % CW, sy = (i * 71.3) % (gy * 0.7); c.fillStyle = 'rgba(200,210,255,' + (0.15 + (i % 5) * 0.08) + ')'; c.fillRect(sx, sy, 1.5, 1.5); }
+  for (let i = 0; i < 26; i++) { const bw = 14 + (i * 7) % 22, bx = i * (CW / 25) - 6, bh = 14 + (i * 29) % 56; c.fillStyle = 'rgba(70,50,160,.22)'; c.fillRect(bx, gy - bh, bw, bh); }
+  // Boden
+  c.fillStyle = '#0c0a2b'; c.fillRect(0, gy, CW, CH - gy);
+  c.strokeStyle = '#19e6ff'; c.lineWidth = 2; c.shadowColor = '#19e6ff'; c.shadowBlur = 12; c.beginPath(); c.moveTo(0, gy); c.lineTo(CW, gy); c.stroke();
+  c.shadowBlur = 0; c.strokeStyle = 'rgba(255,47,208,.55)'; c.lineWidth = 1; c.beginPath(); c.moveTo(0, gy + 7); c.lineTo(CW, gy + 7); c.stroke();
+  c.fillStyle = '#8c93bd'; c.font = '600 10px Bahnschrift,system-ui,sans-serif'; c.textAlign = 'center';
+  for (let x = Math.ceil(v.a / 10) * 10; v.X(x) < CW; x += 10) { c.strokeStyle = 'rgba(140,150,255,.4)'; c.beginPath(); c.moveTo(v.X(x), gy + 9); c.lineTo(v.X(x), gy + (x % 20 === 0 ? 17 : 13)); c.stroke(); if (x % 20 === 0) c.fillText(x + ' m', v.X(x), gy + 29); }
+  // Parkfeld
+  if (L.zone) {
+    const z0 = v.X(L.zone[0]), z1 = v.X(L.zone[1]);
+    const zg = c.createLinearGradient(0, gy - 90, 0, gy); zg.addColorStop(0, 'rgba(55,255,139,0)'); zg.addColorStop(1, 'rgba(55,255,139,.22)');
+    c.fillStyle = zg; c.fillRect(z0, gy - 90, z1 - z0, 90);
+    c.fillStyle = 'rgba(55,255,139,.16)'; c.fillRect(z0, gy + 36, z1 - z0, 22);
+    c.strokeStyle = '#37ff8b'; c.lineWidth = 2; c.setLineDash([7, 5]); c.shadowColor = '#37ff8b'; c.shadowBlur = 8; c.strokeRect(z0, gy + 36, z1 - z0, 22); c.setLineDash([]); c.shadowBlur = 0;
+    c.fillStyle = '#37ff8b'; c.font = '900 16px Bahnschrift,system-ui,sans-serif'; c.fillText('P · PARKFELD', (z0 + z1) / 2, gy + 52);
+  }
+  // Tor
+  if (L.gx != null) {
+    const gx = v.X(L.gx), dir = L.goal.vT >= 0 ? 1 : -1, top = gy - 128, col = S.hit ? (S.hit.ok ? '#37ff8b' : '#ff3b5c') : '#ffb52e';
+    const zg = c.createLinearGradient(gx - 14 * dir, 0, gx + 2 * dir, 0); zg.addColorStop(0, 'rgba(255,181,46,0)'); zg.addColorStop(1, S.hit ? (S.hit.ok ? 'rgba(55,255,139,.3)' : 'rgba(255,59,92,.3)') : 'rgba(255,181,46,.26)');
+    c.fillStyle = zg; c.fillRect(Math.min(gx, gx - 14 * dir), top, 14, gy - top);
+    c.strokeStyle = col; c.lineWidth = 3; c.shadowColor = col; c.shadowBlur = 12; c.beginPath(); c.moveTo(gx, gy); c.lineTo(gx, top); c.stroke(); c.shadowBlur = 0;
+    const txt = S.hit ? fmt(S.hit.v) + ' m/s ' + (S.hit.ok ? '✓' : '✗') : (dir > 0 ? '▶ ' : '◀ ') + fmt(L.goal.vT) + ' m/s';
+    c.font = '900 13px Bahnschrift,system-ui,sans-serif'; const tw = c.measureText(txt).width + 18;
+    c.fillStyle = 'rgba(10,8,40,.92)'; rr(c, gx - tw / 2, top - 26, tw, 24, 8); c.fill(); c.strokeStyle = col; c.lineWidth = 2; c.stroke();
+    c.fillStyle = col; c.textAlign = 'center'; c.fillText(txt, gx, top - 9);
+    c.font = '800 10px Bahnschrift,system-ui,sans-serif'; c.fillStyle = '#8c93bd'; c.fillText('TOR', gx, top - 32);
+  }
+  // Wagen
+  const st = stateAt(S.sim, S.t), w = KW * v.sc;
+  const groups = groupsAt(S.sim, S.t);
+  groups.forEach((gr) => {
+    if (gr.mem.length > 1) {
+      const xs = gr.mem.map((i) => st[i].x).sort((a, b) => a - b);
+      for (let k = 0; k < xs.length - 1; k++) {
+        const lx = v.X((xs[k] + xs[k + 1]) / 2 + KW / 2), isBolt = !!L.split;
+        c.save(); c.shadowColor = isBolt ? '#ffb52e' : '#fff'; c.shadowBlur = 14; c.fillStyle = isBolt ? '#ffb52e' : '#ffffff';
+        c.fillRect(lx - 3, gy - w * 0.26, 6, w * 0.16); c.restore();
+      }
+    }
+  });
+  const hmax = (m) => w * Math.min(0.62, 0.3 + 0.05 * m) * (m >= 3 ? 1.0 : 1.0) + w * 0.17;
+  st.forEach((s, i) => { const o = L.veh[i]; const vv = s.v; drawCar(c, v.X(s.x), gy, w, s.m, o.col, vv < -1e-6 ? -1 : vv > 1e-6 ? 1 : (o.face || 1), L.split ? o.name : ''); });
+  const fs = Math.max(11, Math.min(15, CW / 70));
+  groups.forEach((gr) => {
+    const cx = gr.mem.reduce((a, i) => a + v.X(st[i].x), 0) / gr.mem.length;
+    const top = gy - Math.max(...gr.mem.map((i) => hmax(st[i].m))) - 14;
+    const col = L.veh[gr.mem[0]].col, name = gr.mem.length > 1 ? 'Klumpen' : L.veh[gr.mem[0]].name;
+    arrow(c, cx, top, Math.max(-120, Math.min(120, gr.v * 3.6)), gr.v > 0 ? '#19e6ff' : '#ff2fd0');
+    c.textAlign = 'center'; c.font = '800 ' + fs + 'px Bahnschrift,system-ui,sans-serif'; c.fillStyle = col;
+    c.fillText(name + ' · ' + gr.m + ' t', cx, top - 34 + (gr.mem.length > 1 ? 0 : 0));
+    c.font = '900 ' + (fs + 3) + 'px Bahnschrift,system-ui,sans-serif'; c.fillStyle = Math.abs(gr.v) < 1e-6 ? '#8c93bd' : '#fff';
+    c.fillText(fmt(gr.v) + ' m/s', cx, top - 16);
+  });
+  // Bekanntes Tempo von A nach dem Start (groß, gut sichtbar)
+  if (L.split && L.split.va != null && S.t < L.split.t) {
+    const ga = groups.find((gr) => gr.mem.includes(idxOf(L, L.split.a)));
+    if (ga) {
+      const cx = ga.mem.reduce((a, i) => a + v.X(st[i].x), 0) / ga.mem.length, top = gy - Math.max(...ga.mem.map((i) => hmax(st[i].m))) - 14;
+      const txt = 'A fährt mit ' + fmt(L.split.va) + ' m/s ' + (L.split.va < 0 ? '◀' : '▶');
+      c.font = '900 ' + (fs + 4) + 'px Bahnschrift,system-ui,sans-serif'; const tw = c.measureText(txt).width + 24, by = top - 98;
+      c.fillStyle = 'rgba(10,8,40,.94)'; rr(c, cx - tw / 2, by, tw, 34, 10); c.fill(); c.strokeStyle = '#19e6ff'; c.lineWidth = 2; c.shadowColor = '#19e6ff'; c.shadowBlur = 12; c.stroke(); c.shadowBlur = 0;
+      c.fillStyle = '#19e6ff'; c.textAlign = 'center'; c.fillText(txt, cx, by + 23);
+    }
+  }
+  // Sprengbolzen-Zähler
+  if (L.split && S.t < L.split.t && S.running) { c.fillStyle = '#ffb52e'; c.font = '900 14px Bahnschrift,system-ui,sans-serif'; c.textAlign = 'center'; c.fillText('⚡ Sprengung in ' + fmt(L.split.t - S.t) + ' s', CW / 2, 22); }
+  // Vorschau (Hilfe in Level 1–2)
+  if (L.hint && !S.running && S.attempts >= 0) {
+    const pv = previewSpeed(L, S.val);
+    c.textAlign = 'center'; c.font = '800 13px Bahnschrift,system-ui,sans-serif'; c.fillStyle = '#ffb52e';
+    c.fillText(pv == null ? 'Vorschau: kein Stoß – die Wagen verpassen sich' : 'Vorschau: Der Klumpen würde mit ' + fmt(pv) + ' m/s fahren', CW / 2, 22);
+  }
+  // Effekte
+  S.fx = S.fx.filter((f) => now - f.born < 900);
+  S.fx.forEach((f) => { const a = (now - f.born) / 900; c.globalAlpha = 1 - a; c.fillStyle = '#fff'; c.shadowColor = '#ff2fd0'; c.shadowBlur = 18; c.font = '900 ' + (22 + 10 * a) + 'px Bahnschrift,system-ui,sans-serif'; c.textAlign = 'center'; c.fillText(f.txt, f.x, f.y - 50 - 30 * a); c.globalAlpha = 1; c.shadowBlur = 0; });
+  c.globalCompositeOperation = 'lighter';
+  S.parts.forEach((p) => { p.age += dtR || 0; p.x += p.vx * (dtR || 0); p.y += p.vy * (dtR || 0); p.vy += 260 * (dtR || 0); const a = Math.max(0, 1 - p.age / p.life); c.globalAlpha = a; c.fillStyle = p.col; c.beginPath(); c.arc(p.x, p.y, 2.6 * a + 0.6, 0, 7); c.fill(); });
+  c.globalAlpha = 1; c.globalCompositeOperation = 'source-over';
+  S.parts = S.parts.filter((p) => p.age < p.life);
+  c.restore();
+}
+
+
+/* ---------------- Tutorial ---------------- */
+const C1 = '#19e6ff', C2 = '#ff2fd0', C3 = '#ffb52e';
+const seg = (p, label, parts) => ({ p, label, parts });
+const TUT = [
+  { k: 'idee', short: 'Grundidee', title: 'Die Grundidee',
+    idee: 'Jeder Wagen hat einen <b>Impuls p = m · v</b> (Masse mal Tempo). Rechts ist positiv, links negativ. Bei jedem Stoß und jeder Sprengung bleibt die <b>Summe aller Impulse</b> gleich: Σp vorher = Σp nachher. Mehr Physik brauchst du nicht.<br><br><b>Welt 1:</b> Die Wagen kleben beim Stoß und fahren als ein Klumpen weiter.<br><b>Welt 2:</b> Zwei Wagen starten zusammen aus der Ruhe und stoßen sich ab.<br><br>Nach jedem Versuch zeigt dir die Impuls-Waage, ob die Balken vorher und nachher gleich lang sind.',
+    ex: 'Du: 2 t mit 5 m/s → p = 2 · 5 = 10 t·m/s<br>Laster: 3 t mit −2 m/s → p = 3 · (−2) = −6 t·m/s' },
+  { k: 'tor', short: 'Tempo einstellen', grp: 'KLEBEN', title: 'Kleben · Tempo einstellen',
+    gegeben: 'alle Massen, Tempo der anderen Wagen, Soll-Tempo des Klumpens', gesucht: 'dein Tempo v₀',
+    idee: 'Rechne vom Ziel rückwärts: Der Impuls des Klumpens nachher ist so groß wie der Gesamtimpuls vorher. Fährt der andere Wagen schon, zählt sein Impuls mit.',
+    ex: 'Du 1 t, Laster 4 t steht. Soll: 3 m/s.<br>nachher: (1 + 4) · 3 = 15<br>vorher: 1 · v₀ + 4 · 0 = 15 → <b>v₀ = 15 m/s</b>',
+    bars: [{ name: 'VORHER', segs: [seg(15, '1·15', [{ col: C1, share: 1 }])] }, { name: 'NACHHER', segs: [seg(15, '5·3', [{ col: C1, share: 0.2 }, { col: C2, share: 0.8 }])] }] },
+  { k: 'masse', short: 'Masse wählen', grp: 'KLEBEN', title: 'Kleben · Masse wählen',
+    gegeben: 'dein Tempo, die anderen Massen und Tempos, Soll-Tempo', gesucht: 'deine Masse m',
+    idee: 'Schreibe die Bilanz mit der unbekannten Masse hin und löse nach m auf.',
+    ex: 'Dein Tempo 10 m/s, Laster 3 t steht. Soll: 2,5 m/s.<br>m · 10 = (m + 3) · 2,5<br>10 m = 2,5 m + 7,5 → 7,5 m = 7,5 → <b>m = 1 t</b>',
+    bars: [{ name: 'VORHER', segs: [seg(10, '1·10', [{ col: C1, share: 1 }])] }, { name: 'NACHHER', segs: [seg(10, '4·2,5', [{ col: C1, share: 0.25 }, { col: C2, share: 0.75 }])] }] },
+  { k: 'stand', short: 'Stillstand', grp: 'KLEBEN', title: 'Gegenverkehr · Stillstand',
+    gegeben: 'Massen, Tempo des Gegners (negativ!)', gesucht: 'dein Tempo v₀',
+    idee: 'Stehen bleiben heißt: Σp = 0. Dein Impuls nach rechts muss genauso groß sein wie der des Gegners nach links.',
+    ex: 'Du 3 t, Gegner 2 t mit −9 m/s.<br>3 · v₀ + 2 · (−9) = 0 → 3 v₀ = 18 → <b>v₀ = 6 m/s</b>',
+    bars: [{ name: 'VORHER', segs: [seg(18, '3·6', [{ col: C1, share: 1 }]), seg(-18, '2·−9', [{ col: C2, share: 1 }])] }, { name: 'NACHHER', segs: [] }] },
+  { k: 'kette', short: 'Kette', grp: 'KLEBEN', title: 'Kette · mehrere Stöße',
+    gegeben: 'alle Massen und Tempos, Soll-Tempo am Ende', gesucht: 'dein Tempo v₀',
+    idee: 'Es zählt der Gesamtimpuls aller Wagen. In welcher Reihenfolge es klackt, ist egal – du rechnest nur einmal.',
+    ex: 'Du 1 t, zwei stehende Wagen mit 2 t und 2 t. Soll am Ende: 2 m/s.<br>1 · v₀ = (1 + 2 + 2) · 2 = 10 → <b>v₀ = 10 m/s</b>',
+    bars: [{ name: 'VORHER', segs: [seg(10, '1·10', [{ col: C1, share: 1 }])] }, { name: 'NACHHER', segs: [seg(10, '5·2', [{ col: C1, share: 0.2 }, { col: C2, share: 0.4 }, { col: C3, share: 0.4 }])] }] },
+  { k: 'rueck', short: 'Tempo des anderen', grp: 'ABSTOSSEN', title: 'Abstoßen · Tempo einstellen',
+    gegeben: 'beide Massen, Soll-Tempo des einen Wagens', gesucht: 'Tempo des anderen Wagens',
+    idee: 'Beide stehen zusammen still, der Gesamtimpuls ist 0. Nach dem Abstoßen sind die beiden Impulse <b>gleich groß, aber entgegengesetzt</b>: m_A · v_A + m_B · v_B = 0.',
+    ex: 'A 2 t, B 4 t. B soll mit 3 m/s nach rechts fahren.<br>p_B = 4 · 3 = 12 → p_A = −12<br>v_A = −12 : 2 = <b>−6 m/s</b>',
+    bars: [{ name: 'VORHER', segs: [] }, { name: 'NACHHER', segs: [seg(-12, '2·−6', [{ col: C1, share: 1 }]), seg(12, '4·3', [{ col: C2, share: 1 }])] }] },
+  { k: 'rueckm', short: 'Masse von B', grp: 'ABSTOSSEN', title: 'Abstoßen · Masse wählen',
+    gegeben: 'Masse und Tempo von A, Soll-Tempo von B', gesucht: 'Masse von B',
+    idee: 'Auch hier ist Σp = 0. Der Impuls von A bestimmt den Impuls von B – daraus folgt die Masse.',
+    ex: 'A 2 t fährt mit −5 m/s: p_A = −10 → p_B = +10.<br>B soll 2,5 m/s haben: m_B = 10 : 2,5 = <b>4 t</b>',
+    bars: [{ name: 'VORHER', segs: [] }, { name: 'NACHHER', segs: [seg(-10, '2·−5', [{ col: C1, share: 1 }]), seg(10, '4·2,5', [{ col: C2, share: 1 }])] }] },
+];
+function openTut(i) {
+  S.tut = Math.max(0, Math.min(TUT.length - 1, i));
+  const t = TUT[S.tut];
+  let h = '<h2>' + t.title + '</h2>';
+  if (t.gegeben) h += '<div class="tutRow"><span class="tg">gegeben</span><span>' + t.gegeben + '</span></div><div class="tutRow"><span class="tg s">gesucht</span><span>' + t.gesucht + '</span></div>';
+  h += '<p>' + t.idee + '</p>';
+  if (t.ex) h += '<div class="tutEx"><b>Beispiel</b><br>' + t.ex + '</div>';
+  if (t.bars) h += '<div class="waage"><h3>Impuls-Waage zum Beispiel</h3>' + barsSVG(t.bars).svg + '</div>';
+  h += '<div class="mBtns"><button class="btn primary" data-act="tut-close">Schließen</button></div>';
+  showModal(h);
+}
+
+/* ---------------- Bedienung ---------------- */
+$('worlds').addEventListener('click', (e) => { const t = e.target.closest('[data-tut]'); if (t) { openTut(+t.dataset.tut); return; } const b = e.target.closest('[data-lv]'); if (b) openLevel(+b.dataset.lv); });
+$('btnHelp').addEventListener('click', () => { if (!S.running) openTut(Math.max(0, TUT.findIndex((t) => t.k === S.L.typ))); });
+$('btnBack').addEventListener('click', toMenu);
+$('btnGo').addEventListener('click', go);
+$('cRange').addEventListener('input', (e) => { if (!S.running) setVal(+e.target.value); });
+$('cMinus').addEventListener('click', () => { if (!S.running) setVal(S.val - S.L.input.step); });
+$('cPlus').addEventListener('click', () => { if (!S.running) setVal(S.val + S.L.input.step); });
+$('modalCard').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-act]'); if (!b) return;
+  const a = b.dataset.act;
+  if (a === 'brief') { P.seen[S.L.id] = 1; saveP(); closeModal(); }
+  else if (a === 'again') { closeModal(); S.t = 0; S.hit = null; S.fx = []; S.parts = []; goal(); setVal(S.val); }
+  else if (a === 'next') { if (S.li >= LEVELS.length - 1) toMenu(); else openLevel(S.li + 1); }
+  else if (a === 'menu') toMenu();
+  else if (a === 'tut-close') closeModal();
+});
+window.addEventListener('keydown', (e) => {
+  if (document.body.dataset.screen !== 'level' || $('modal').classList.contains('show') || S.running) return;
+  if (e.key === 'ArrowLeft') setVal(S.val - S.L.input.step);
+  else if (e.key === 'ArrowRight') setVal(S.val + S.L.input.step);
+  else if (e.key === 'Enter') go();
+});
+window.addEventListener('resize', () => { if (S.L && document.body.dataset.screen === 'level') { layout(); draw(0); } });
+if (window.ResizeObserver) new ResizeObserver(() => { if (S.L && document.body.dataset.screen === 'level') { layout(); draw(0); } }).observe($('stage'));
+
+window.__K = { S, LEVELS, TUT, openTut, openLevel, setVal, go: (fast) => { S.fast = !!fast; go(); S.fast = false; }, toMenu };
+buildMenu();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#07051a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="GT">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="icon" href="assets/icon-192.png">
+<title>GT</title>
+<style>
+:root{
+  --bg0:#07051a; --ink:#eef1ff; --mut:#8c93bd; --cy:#19e6ff; --mg:#ff2fd0; --am:#ffb52e; --gr:#37ff8b; --rd:#ff3b5c;
+  --pn:rgba(16,11,46,.88); --line:rgba(140,150,255,.26);
+  --font:"Bahnschrift","DIN Alternate","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+html,body{margin:0;height:100%;background:var(--bg0);color:var(--ink);font-family:var(--font);overscroll-behavior:none;-webkit-text-size-adjust:100%;-webkit-touch-callout:none}
+body{-webkit-user-select:none;user-select:none}
+button{font-family:inherit;color:inherit}
+#app{position:fixed;inset:0;overflow:hidden;background:radial-gradient(120% 70% at 50% 0%,#1c1052 0%,var(--bg0) 62%)}
+#home{position:absolute;inset:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:calc(10px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom))}
+#home>*{max-width:900px;margin-left:auto;margin-right:auto}
+
+.hero{text-align:center;padding:18px 0 8px}
+.logo{font-size:clamp(54px,12vw,92px);font-weight:900;font-style:italic;letter-spacing:.06em;line-height:1;text-shadow:0 0 30px rgba(25,230,255,.35)}
+.logo span{color:var(--mg);text-shadow:0 0 30px rgba(255,47,208,.55)}
+.tag{margin-top:8px;color:var(--mut);font-weight:700;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
+
+.thema{margin-top:22px}
+.thema h2{margin:0 0 10px;font-size:15px;font-weight:900;font-style:italic;letter-spacing:.1em;text-transform:uppercase;display:flex;align-items:center;gap:12px}
+.thema h2::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--line),transparent)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+
+.tile{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 10px 12px;border-radius:20px;border:1px solid var(--line);background:linear-gradient(180deg,rgba(50,40,130,.55),rgba(20,14,60,.78));cursor:pointer;text-align:center;min-height:156px;transition:transform .08s,box-shadow .2s}
+.tile:active{transform:scale(.97)}
+.tile:hover{box-shadow:0 0 22px color-mix(in srgb,var(--c) 40%,transparent)}
+.tile .ic{width:72px;height:72px;border-radius:20px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 14%,#0a0724);border:1.5px solid color-mix(in srgb,var(--c) 65%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--c) 30%,transparent)}
+.tile .ic img{width:48px;height:48px;display:block}
+.tile .tt{font-weight:900;font-size:16px;letter-spacing:.03em;line-height:1.15}
+.tile .bd{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--mut)}
+.tile .neu{position:absolute;top:9px;right:9px;font-style:normal;font-size:10px;font-weight:900;letter-spacing:.08em;padding:2px 7px;border-radius:9px;background:var(--gr);color:#07051a;box-shadow:0 0 12px rgba(55,255,139,.6)}
+.tile .lk{position:absolute;top:9px;left:9px;width:22px;height:22px;display:grid;place-items:center;border-radius:50%;background:rgba(7,5,26,.85);border:1px solid var(--line)}
+.tile .lk svg{width:13px;height:13px}
+.tile.lock .ic,.tile.lock .tt{opacity:.45}
+.tile.lock{border-style:dashed}
+
+#foot{margin-top:34px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;color:var(--mut);font-size:13px;border-top:1px solid var(--line);padding-top:14px}
+#foot b{color:var(--ink);font-variant-numeric:tabular-nums}
+#updMsg{font-weight:700;color:var(--cy)}
+
+.btn{border:1px solid rgba(140,150,255,.4);background:linear-gradient(180deg,rgba(62,50,150,.92),rgba(26,18,74,.96));border-radius:14px;padding:12px 18px;font-weight:800;font-style:italic;text-transform:uppercase;letter-spacing:.05em;font-size:14px;cursor:pointer;min-height:44px}
+.btn:active{transform:scale(.97)}
+.btn:disabled{opacity:.45;pointer-events:none}
+.btn.primary{border-color:rgba(255,255,255,.55);background:linear-gradient(120deg,#19e6ff,#6a5cff 55%,#ff2fd0);color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.45);box-shadow:0 0 18px rgba(25,230,255,.35)}
+.btn.small{padding:8px 14px;min-height:36px;font-size:12px}
+
+#sheet{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,3,20,.72);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+.card{background:var(--pn);border:1px solid var(--line);border-radius:20px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+#sheetCard{width:100%;max-width:480px;max-height:100%;overflow:auto;padding:18px;animation:pop .2s ease-out}
+@keyframes pop{from{transform:scale(.94);opacity:0}to{transform:none;opacity:1}}
+.sh-top{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.sh-top .ic{width:72px;height:72px;flex:none;border-radius:20px;display:grid;place-items:center;background:color-mix(in srgb,var(--c) 14%,#0a0724);border:1.5px solid color-mix(in srgb,var(--c) 65%,transparent)}
+.sh-top .ic img{width:48px;height:48px}
+.sh-top h3{margin:0;font-size:24px;font-style:italic;font-weight:900;letter-spacing:.04em}
+.sh-top .bd{font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-top:3px}
+.sh-txt{font-size:16px;line-height:1.45;white-space:pre-line;margin:8px 0 14px}
+.sh-lock{color:var(--am);font-weight:700;font-size:15px;line-height:1.4;margin:8px 0 14px}
+.sh-btns{display:flex;gap:10px}
+.sh-btns .btn{flex:1}
+
+#viewer{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;background:var(--bg0);padding-bottom:env(safe-area-inset-bottom)}
+.vbar{flex:none;display:flex;align-items:center;gap:12px;padding:calc(6px + env(safe-area-inset-top)) 12px 6px;background:rgba(10,7,36,.96);border-bottom:1px solid var(--line)}
+#vTitle{font-weight:800;font-style:italic;letter-spacing:.06em;text-transform:uppercase;font-size:13px;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#vFrame{flex:1;width:100%;border:0;background:var(--bg0)}
+
+#toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:50;padding:10px 18px;border-radius:14px;background:rgba(16,11,46,.96);border:1px solid var(--cy);color:var(--ink);font-weight:800;font-size:14px;box-shadow:0 0 22px rgba(25,230,255,.35);max-width:92vw;text-align:center}
+
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="home">
+    <header class="hero">
+      <div class="logo">G<span>T</span></div>
+      <div class="tag">Übungen, Spiele &amp; Zusammenfassungen</div>
+    </header>
+    <main id="list"></main>
+    <footer id="foot">
+      <div>Version <b id="ver"></b></div>
+      <button class="btn small" id="btnUpd">Nach Updates suchen</button>
+      <div id="updMsg"></div>
+    </footer>
+  </div>
+
+  <div id="sheet" hidden><div class="card" id="sheetCard"></div></div>
+
+  <div id="viewer" hidden>
+    <div class="vbar"><button class="btn small" id="vBack">‹ Übersicht</button><span id="vTitle"></span></div>
+    <iframe id="vFrame" title="Inhalt"></iframe>
+  </div>
+
+  <div id="toast" hidden></div>
+</div>
+<script id="data" type="application/json">{"version":"20261116-5a68c3e","stand":"16.11.2026 18:37","themen":[{"id":"kinematik","titel":"Kinematik"},{"id":"impuls","titel":"Impuls & Stöße"}],"inhalte":[{"id":"redline","titel":"REDLINE","thema":"kinematik","typ":"spiel","beschreibung":"Das Kinematik-Rennspiel: Zeichne das v(t)-Diagramm, fahre durch Ampeln und Baustellen und komme genau im Ziel an.","start":"index.html","icon":"inhalte/redline/icon.svg","farbe":"#ff3b5c","neuBis":"","gesperrt":true,"sperrtext":"Noch gesperrt – wird von deiner Lehrkraft freigeschaltet.","reihenfolge":10},{"id":"kupplung","titel":"KUPPLUNG","thema":"impuls","typ":"spiel","beschreibung":"Ein Rätsel-Spiel zur Impulsbilanz. Wagen stoßen zusammen und kleben (Welt 1) oder stoßen sich aus der Ruhe ab (Welt 2). Rechne vorher aus, was passieren muss, und stelle dann die fehlende Größe ein. Nach jedem Versuch zeigt die Impuls-Waage, ob deine Rechnung gestimmt hat.","start":"index.html","icon":"inhalte/kupplung/icon.svg","farbe":"#ff2fd0","neuBis":"2026-12-15","gesperrt":false,"sperrtext":"Noch gesperrt – wird freigeschaltet.","reihenfolge":10}]}</script>
+<script>
+/* GT-Portal: Übersicht, Info-Karte, Inhalts-Ansicht, Update */
+(function () {
+  'use strict';
+  const D = JSON.parse(document.getElementById('data').textContent);
+  const $ = (id) => document.getElementById(id);
+  const TYP = { spiel: { n: 'Spiel', c: '#19e6ff' }, zusammenfassung: { n: 'Zusammenfassung', c: '#37ff8b' }, folien: { n: 'Folien', c: '#ffb52e' } };
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const today = new Date().toISOString().slice(0, 10);
+  const LOCK = '<svg viewBox="0 0 24 24" fill="none" stroke="#ffb52e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+  const S = { reg: null, pending: null, inViewer: false, reloading: false, cur: null };
+  window.__GT = S;
+
+  /* ---------- Übersicht ---------- */
+  function render() {
+    $('ver').textContent = D.stand + ' · ' + D.version.split('-').pop();
+    $('list').innerHTML = D.themen.map((t) => {
+      const items = D.inhalte.filter((i) => i.thema === t.id);
+      if (!items.length) return '';
+      return '<section class="thema"><h2>' + esc(t.titel) + '</h2><div class="grid">' + items.map((i) => {
+        const neu = i.neuBis && i.neuBis >= today && !i.gesperrt;
+        return '<button class="tile' + (i.gesperrt ? ' lock' : '') + '" data-id="' + esc(i.id) + '" style="--c:' + esc(i.farbe) + '">' +
+          '<span class="ic"><img src="' + esc(i.icon) + '" alt=""></span><span class="tt">' + esc(i.titel) + '</span><span class="bd">' + TYP[i.typ].n + '</span>' +
+          (neu ? '<i class="neu">NEU</i>' : '') + (i.gesperrt ? '<i class="lk">' + LOCK + '</i>' : '') + '</button>';
+      }).join('') + '</div></section>';
+    }).join('');
+  }
+  const find = (id) => D.inhalte.find((i) => i.id === id);
+
+  /* ---------- Info-Karte ---------- */
+  function openSheet(id) {
+    const i = find(id); if (!i) return;
+    S.cur = i;
+    $('sheetCard').innerHTML = '<div class="sh-top" style="--c:' + esc(i.farbe) + '"><span class="ic"><img src="' + esc(i.icon) + '" alt=""></span><div><h3>' + esc(i.titel) + '</h3><div class="bd">' + TYP[i.typ].n + '</div></div></div>' +
+      '<div class="sh-txt">' + esc(i.beschreibung || '') + '</div>' + (i.gesperrt ? '<div class="sh-lock">🔒 ' + esc(i.sperrtext) + '</div>' : '') +
+      '<div class="sh-btns"><button class="btn" id="shClose">Schließen</button><button class="btn primary" id="shOpen"' + (i.gesperrt ? ' disabled' : '') + '>Öffnen</button></div>';
+    $('sheet').hidden = false;
+  }
+  const closeSheet = () => { $('sheet').hidden = true; };
+
+  /* ---------- Inhalt in der Hülle öffnen ---------- */
+  function openContent(i) {
+    if (i.gesperrt) return;
+    closeSheet();
+    $('vTitle').textContent = i.titel;
+    $('vFrame').src = 'inhalte/' + i.id + '/' + i.start;
+    $('viewer').hidden = false;
+    S.inViewer = true;
+    try { history.pushState({ v: 1 }, ''); } catch (e) { /* egal */ }
+  }
+  function closeContent(fromPop) {
+    if (!S.inViewer) return;
+    S.inViewer = false;
+    $('viewer').hidden = true;
+    $('vFrame').src = 'about:blank';
+    if (!fromPop) { try { history.back(); } catch (e) { /* egal */ } }
+    if (S.pending) applyUpdate();
+  }
+  window.addEventListener('popstate', () => closeContent(true));
+
+  /* ---------- Bedienung ---------- */
+  $('list').addEventListener('click', (e) => { const t = e.target.closest('.tile'); if (t) openSheet(t.dataset.id); });
+  $('sheet').addEventListener('click', (e) => {
+    if (e.target === $('sheet') || e.target.id === 'shClose') closeSheet();
+    else if (e.target.id === 'shOpen') openContent(S.cur);
+  });
+  $('vBack').addEventListener('click', () => closeContent(false));
+  window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (S.inViewer) closeContent(false); else closeSheet(); } });
+
+  /* ---------- Toast ---------- */
+  let tt = 0;
+  function toast(m, ms) { const t = $('toast'); t.textContent = m; t.hidden = false; clearTimeout(tt); tt = setTimeout(() => { t.hidden = true; }, ms || 3200); }
+
+  /* ---------- Update (Service Worker) ---------- */
+  function applyUpdate() {
+    if (!S.pending) return;
+    try { localStorage.setItem('gt-updated', '1'); } catch (e) { /* egal */ }
+    S.pending.postMessage('skip');
+  }
+  function onPending(sw) {
+    S.pending = sw;
+    if (!S.inViewer) applyUpdate();          // auf der Übersicht sofort, im Inhalt erst nach dem Schließen
+    else $('updMsg').textContent = 'Update bereit – wird nach dem Schließen geladen.';
+  }
+  function setupSW() {
+    if (!('serviceWorker' in navigator) || !/^https?:$/.test(location.protocol)) { $('btnUpd').disabled = true; $('updMsg').textContent = 'Updates gibt es nur in der installierten Version.'; return; }
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
+      S.reg = reg;
+      if (reg.waiting && navigator.serviceWorker.controller) onPending(reg.waiting);
+      reg.addEventListener('updatefound', () => {
+        const nw = reg.installing; if (!nw) return;
+        if (navigator.serviceWorker.controller) $('updMsg').textContent = 'Update wird geladen …';
+        nw.addEventListener('statechange', () => { if (nw.state === 'installed' && navigator.serviceWorker.controller) onPending(nw); });
+      });
+      reg.update().catch(() => {});
+    }).catch(() => {});
+    let hadCtl = !!navigator.serviceWorker.controller;      // beim allerersten Installieren nicht neu laden
+    navigator.serviceWorker.addEventListener('controllerchange', () => { if (!hadCtl) { hadCtl = true; return; } if (S.reloading) return; S.reloading = true; location.reload(); });
+    document.addEventListener('visibilitychange', () => { if (!document.hidden && S.reg) S.reg.update().catch(() => {}); });
+  }
+  $('btnUpd').addEventListener('click', () => {
+    if (!S.reg) return;
+    $('updMsg').textContent = 'Suche …';
+    S.reg.update().then(() => setTimeout(() => {
+      if (S.pending || S.reg.installing || S.reg.waiting) $('updMsg').textContent = 'Update wird geladen …';
+      else $('updMsg').textContent = 'Du hast die neueste Version.';
+    }, 1500)).catch(() => { $('updMsg').textContent = 'Keine Verbindung – später nochmal versuchen.'; });
+  });
+
+  render();
+  setupSW();
+  try { if (localStorage.getItem('gt-updated')) { localStorage.removeItem('gt-updated'); toast('Aktualisiert auf Version ' + D.version.split('-').pop()); } } catch (e) { /* egal */ }
+})();
+
+</script>
+</body>
+</html>
