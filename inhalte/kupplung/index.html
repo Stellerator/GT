@@ -235,12 +235,12 @@ const LEVELS = [
     couple: [['a', 'b']], split: { t: 1.5, a: 'a', b: 'b' },
     input: { kind: 'va', min: -10, max: 4, step: 1, start: 0, unit: 'm/s', label: 'Tempo von A nach dem Start' },
     goal: { type: 'gate', veh: 'b', vT: 10, tol: 0.2, dx: 24 }, sol: -2 },
-  { id: 10, world: 1, title: 'Zurückgelassen', typ: 'fahrtm', stoss: 'stößt ab',
-    text: 'Der Klumpen rollt mit 2 m/s. Nach dem Sprengen bleibt Wagen A stehen. B soll mit dem Soll-Tempo weiterfahren. Wähle die Masse von B (Ladung).',
-    veh: [{ id: 'a', name: 'A', m: 3, v: 2, x: 0, face: 1 }, { id: 'b', name: 'B', m: 3, v: 2, x: 8, face: 1 }],
-    couple: [['a', 'b']], split: { t: 1.5, a: 'a', b: 'b', va: 0 },
-    input: { kind: 'm', veh: 'b', min: 1, max: 6, step: 1, start: 3, unit: 't', label: 'Masse von B (mit Ladung)' },
-    goal: { type: 'gate', veh: 'b', vT: 5, tol: 0.2, dx: 24 }, sol: 2 },
+  { id: 10, world: 1, title: 'Abgebremst', typ: 'fahrtb', stoss: 'stößt ab',
+    text: 'Der Klumpen rollt mit 4 m/s. Nach dem Sprengen fährt A etwas langsamer weiter und soll mit dem Soll-Tempo durchs Tor. B zieht davon. Welches Tempo muss B bekommen?',
+    veh: [{ id: 'a', name: 'A', m: 3, v: 4, x: 0, face: 1 }, { id: 'b', name: 'B', m: 1, v: 4, x: 8, face: 1 }],
+    couple: [['a', 'b']], split: { t: 1.5, a: 'a', b: 'b' },
+    input: { kind: 'vb', min: 4, max: 12, step: 1, start: 5, unit: 'm/s', label: 'Tempo von B nach dem Start' },
+    goal: { type: 'gate', veh: 'a', vT: 3, tol: 0.2, dx: 10 }, sol: 7 },
 ];
 LEVELS.forEach((L) => L.veh.forEach((o, i) => { o.col = KCOL[i % KCOL.length]; }));
 // Reihenfolge im Spiel: Welt 1 = Abstoßen, Welt 2 = Kleben. Die ids bleiben stabil (Speicherstand), angezeigt wird die Nummer `no`.
@@ -293,9 +293,14 @@ function simulate(L, val, opt) {
       const mm = members(g0), M = mm.reduce((s, i) => s + V[i].m, 0), Vc = V[ia].v;
       const before = [snap(g0)];
       const x = V[ia].x + KW / 2;
-      const va = inp.kind === 'va' ? val : L.split.va;
-      V[ia].v = va;
-      V[ib].v = (M * Vc - V[ia].m * va) / V[ib].m;
+      if (inp.kind === 'vb') {                       // Tempo von B wird eingestellt, A bekommt den Rest des Impulses
+        V[ib].v = val;
+        V[ia].v = (M * Vc - V[ib].m * val) / V[ia].m;
+      } else {                                        // Tempo von A ist gegeben oder wird eingestellt
+        const va = inp.kind === 'va' ? val : L.split.va;
+        V[ia].v = va;
+        V[ib].v = (M * Vc - V[ia].m * va) / V[ib].m;
+      }
       grp[ib] = nextG++;
       events.push({ t, kind: 'split', x, before, after: [snap(grp[ia]), snap(grp[ib])] });
       push();
@@ -864,12 +869,12 @@ const TUT = [
     bars: [{ name: 'VORHER', segs: [seg(16, '4·4', [{ col: C1, share: 0.25 }, { col: C2, share: 0.75 }])] }, { name: 'NACHHER', segs: [seg(-2, '', C1, true), seg(18, '3·6', C2)] }], opt: { note: 'rechts 18 minus links 2 = 16 (wie vorher)' },
     steps: ['<b>Vorher:</b> Der Klumpen wiegt 1 + 3 = 4 t und fährt 4 m/s. Gesamtimpuls: 4 · 4 = <b>16</b>.', '<b>B nachher:</b> 3 · 6 = <b>18</b>.', 'Die Summe muss weiter 16 sein: A + 18 = 16, also hat A <b>−2</b>. 1 · ? = −2, also <b>? = −2 m/s</b>. A wird rückwärts geschoben.'],
     merke: 'Der Gesamtimpuls bleibt erhalten – er ist nur nicht mehr 0. Er ist Gesamtmasse mal Tempo vor dem Abstoßen.' },
-  { k: 'fahrtm', short: 'Aus der Fahrt: Masse', grp: 'ABSTOSSEN', title: 'Abstoßen aus der Fahrt · Masse wählen',
-    frage: 'A (2 t) und B kleben und rollen mit 3 m/s. Nach dem Sprengen bleibt A stehen, B soll mit 6 m/s weiterfahren. Wie schwer muss B sein?',
-    scene: { before: [item([car(C1), car(C2, true)], 'A + B · (2 + ?) t', '3 m/s ▶')], after: [item([car(C1)], 'A · 2 t', '0 m/s'), item([car(C2, true)], 'B · ? t', '6 m/s ▶')], mid: 'stößt ab' },
-    bars: [{ name: 'VORHER (Probe mit 2 t)', segs: [seg(12, '4·3', [{ col: C1, share: 0.5 }, { col: C2, share: 0.5 }])] }, { name: 'NACHHER', segs: [seg(12, '2·6', C2)] }], opt: { guide: true, note: 'Probe: beide Balken gleich lang' },
-    steps: ['<b>Nachher:</b> A steht (Impuls 0). Nur B hat Impuls: Masse · 6.', '<b>Vorher:</b> Der Klumpen wiegt (2 + Masse) t: (2 + Masse) · 3 = 6 + 3 · Masse.', '<b>Gleich setzen:</b> 6 + 3 · Masse = 6 · Masse, also 3 · Masse = 6 und <b>Masse = 2 t</b>.', '<b>Probe:</b> (2 + 2) · 3 = 12 und 2 · 6 = 12 ✓'],
-    merke: 'Bleibt ein Wagen stehen, trägt der andere den ganzen Impuls weiter.' },
+  { k: 'fahrtb', short: 'Aus der Fahrt: Tempo von B', grp: 'ABSTOSSEN', title: 'Abstoßen aus der Fahrt · Tempo des anderen',
+    frage: 'Zwei verklebte Wagen (A 3 t, B 1 t) rollen mit 2 m/s. Ein Sprengbolzen stößt sie ab. A soll danach mit 1 m/s weiterfahren. Wie schnell fährt B?',
+    scene: { before: [item([car(C1, true), car(C2)], 'A + B · 4 t', '2 m/s ▶')], after: [item([car(C1, true)], 'A · 3 t', '1 m/s ▶'), item([car(C2)], 'B · 1 t', '? m/s ▶')], mid: 'stößt ab' },
+    bars: [{ name: 'VORHER', segs: [seg(8, '4·2', [{ col: C1, share: 0.75 }, { col: C2, share: 0.25 }])] }, { name: 'NACHHER', segs: [seg(3, '3·1', C1), seg(5, '1·?', C2, true)] }], opt: { guide: true, note: 'beide Teile zusammen wieder so lang wie vorher' },
+    steps: ['<b>Vorher:</b> Der Klumpen wiegt 3 + 1 = 4 t und fährt 2 m/s. Gesamtimpuls: 4 · 2 = <b>8</b>.', '<b>A nachher:</b> 3 · 1 = <b>3</b>.', 'Der Rest gehört B: 8 − 3 = <b>5</b>. 1 · ? = 5, also <b>? = 5 m/s</b>. B zieht davon.'],
+    merke: 'Was A weniger hat, hat B mehr – die Summe bleibt gleich.' },
   { k: 'rueckm', short: 'Masse von B', grp: 'ABSTOSSEN', title: 'Abstoßen · Masse wählen',
     frage: 'A (2 t) fährt nach dem Abstoßen mit −5 m/s nach links. B soll mit 2,5 m/s nach rechts fahren. Wie schwer muss B sein?',
     scene: { before: [item([car(C1), car(C2, true)], 'A + B', '0 m/s')], after: [item([car(C1)], 'A · 2 t', '◀ −5 m/s'), item([car(C2, true)], 'B · ? t', '2,5 m/s ▶')], mid: 'stößt ab' },
